@@ -196,7 +196,7 @@ export function ContractDetailsForm({ initialData, onSubmit, onBack }: ContractD
                   <Input
                     id="deliveryPlace"
                     type="text"
-                    placeholder="e.g. Mahbourg"
+                    placeholder="e.g. Mahébourg"
                     value={formData.deliveryPlace}
                     onChange={(e) =>
                       setFormData((prev) => ({ ...prev, deliveryPlace: e.target.value }))
@@ -218,7 +218,7 @@ export function ContractDetailsForm({ initialData, onSubmit, onBack }: ContractD
                   <Input
                     id="recoveryPlace"
                     type="text"
-                    placeholder="e.g. Mahbourg"
+                    placeholder="e.g. Mahébourg"
                     value={formData.recoveryPlace}
                     onChange={(e) =>
                       setFormData((prev) => ({ ...prev, recoveryPlace: e.target.value }))
