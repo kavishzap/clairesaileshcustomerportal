@@ -3,16 +3,13 @@
 import { useState } from "react"
 import { CustomerInfo } from "@/app/page"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { ArrowLeft, ArrowRight } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { toast } from "@/hooks/use-toast"
-import {
-  MSG_CUSTOMER_NOT_FOUND,
-  MSG_VERIFY_FAILED,
-} from "@/lib/portal-messages"
+import { MSG_CUSTOMER_NOT_FOUND, MSG_VERIFY_FAILED } from "@/lib/portal-messages"
 
 interface ExistingCustomerFormProps {
   initialData: CustomerInfo
@@ -31,7 +28,6 @@ export function ExistingCustomerForm({ initialData, onSubmit, onBack }: Existing
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-  /** Compare NIC/passport ignoring spaces and case (DB may store "12 345 6789" vs "123456789"). */
   const normalizeNicOrPassport = (value: string) =>
     value.trim().replace(/\s+/g, "").toUpperCase()
 
@@ -42,8 +38,6 @@ export function ExistingCustomerForm({ initialData, onSubmit, onBack }: Existing
       )
     }
 
-    // Email: use ilike so it matches DB casing (eq is case-sensitive; we were lowercasing input only).
-    // Unique on email → at most one row; fetch nic_or_passport and compare in JS for formatting flexibility.
     const url = `${supabaseUrl.replace(/\/$/, "")}/rest/v1/customers?select=id,nic_or_passport&email=ilike.${encodeURIComponent(
       email
     )}&limit=1`
@@ -93,7 +87,7 @@ export function ExistingCustomerForm({ initialData, onSubmit, onBack }: Existing
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {}
-    
+
     if (!formData.email) {
       newErrors.email = "Email address is required"
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
@@ -111,7 +105,7 @@ export function ExistingCustomerForm({ initialData, onSubmit, onBack }: Existing
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (!validateForm()) return
     setFormMessage(null)
 
@@ -126,11 +120,7 @@ export function ExistingCustomerForm({ initialData, onSubmit, onBack }: Existing
 
       if (result.ok) {
         toast({ title: "Customer validated please proceed" })
-        // Keep a small delay so the toast can be seen before changing steps.
-        setTimeout(
-          () => onSubmit({ ...payload, customerId: result.id }),
-          200
-        )
+        setTimeout(() => onSubmit({ ...payload, customerId: result.id }), 200)
       } else {
         setErrors((prev) => ({
           ...prev,
@@ -163,18 +153,20 @@ export function ExistingCustomerForm({ initialData, onSubmit, onBack }: Existing
 
   return (
     <div className="space-y-8">
-      {/* Header */}
-      <div className="space-y-2">
-        <h2 className="text-2xl sm:text-3xl font-serif font-medium">Welcome Back</h2>
-        <p className="text-muted-foreground">
+      <div className="space-y-3">
+        <span className="section-kicker">Step 2</span>
+        <h2 className="text-3xl font-serif font-semibold sm:text-4xl">Welcome back</h2>
+        <p className="max-w-2xl text-base leading-7 text-muted-foreground">
           Please provide your email and enter your NIC/Passport number to continue.
         </p>
         {formMessage && (
           <p
+            role="status"
+            aria-live="polite"
             className={
               formMessage.type === "success"
-                ? "text-sm text-green-600"
-                : "text-sm text-destructive"
+                ? "text-sm font-medium text-success-foreground"
+                : "text-sm font-medium text-destructive"
             }
           >
             {formMessage.text}
@@ -183,9 +175,9 @@ export function ExistingCustomerForm({ initialData, onSubmit, onBack }: Existing
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        <Card className="rounded-2xl">
+        <Card className="portal-card rounded-[1.75rem]">
           <CardHeader>
-            <CardTitle>Account Information</CardTitle>
+            <CardTitle className="text-xl">Account information</CardTitle>
             <CardDescription>Enter your registered email address</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -196,25 +188,25 @@ export function ExistingCustomerForm({ initialData, onSubmit, onBack }: Existing
                 type="email"
                 placeholder="john@example.com"
                 value={formData.email}
-                onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
+                aria-invalid={!!errors.email}
+                aria-describedby={errors.email ? "existing-email-error" : "existing-email-note"}
                 className={cn(
                   "h-12 rounded-xl",
                   errors.email && "border-destructive focus-visible:ring-destructive"
                 )}
               />
-              {errors.email && (
-                <p className="text-sm text-destructive">{errors.email}</p>
-              )}
-              <p className="text-xs text-muted-foreground">
+              {errors.email && <p id="existing-email-error" className="error-text">{errors.email}</p>}
+              <p id="existing-email-note" className="field-note">
                 Use the email address associated with your account.
               </p>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="rounded-2xl">
+        <Card className="portal-card rounded-[1.75rem]">
           <CardHeader>
-            <CardTitle>NIC/Passport Number</CardTitle>
+            <CardTitle className="text-xl">NIC/Passport number</CardTitle>
             <CardDescription>Enter your NIC or Passport number used at registration</CardDescription>
           </CardHeader>
           <CardContent>
@@ -227,40 +219,34 @@ export function ExistingCustomerForm({ initialData, onSubmit, onBack }: Existing
                 onChange={(e) =>
                   setFormData((prev) => ({ ...prev, nicPassportNumber: e.target.value }))
                 }
+                aria-invalid={!!errors.nicPassportNumber}
+                aria-describedby={errors.nicPassportNumber ? "existing-nic-error" : undefined}
                 className={cn(
                   "h-12 rounded-xl",
                   errors.nicPassportNumber && "border-destructive focus-visible:ring-destructive"
                 )}
               />
               {errors.nicPassportNumber && (
-                <p className="text-sm text-destructive">{errors.nicPassportNumber}</p>
+                <p id="existing-nic-error" className="error-text">
+                  {errors.nicPassportNumber}
+                </p>
               )}
             </div>
           </CardContent>
         </Card>
 
-        {/* Actions */}
-        <div className="flex flex-col sm:flex-row gap-3 pt-4">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onBack}
-            className="h-12 rounded-xl px-6"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
+        <div className="flex flex-col gap-3 pt-4 sm:flex-row">
+          <Button type="button" variant="outline" onClick={onBack} className="h-12 px-6">
+            <ArrowLeft className="mr-2 h-4 w-4" />
             Back
           </Button>
-          <Button
-            type="submit"
-            disabled={isSubmitting}
-            className="h-12 rounded-xl px-8 flex-1 sm:flex-none"
-          >
+          <Button type="submit" disabled={isSubmitting} className="h-12 flex-1 px-8 sm:flex-none">
             {isSubmitting ? (
               "Processing..."
             ) : (
               <>
                 Continue
-                <ArrowRight className="w-4 h-4 ml-2" />
+                <ArrowRight className="ml-2 h-4 w-4" />
               </>
             )}
           </Button>

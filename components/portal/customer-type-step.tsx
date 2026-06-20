@@ -3,7 +3,7 @@
 import { CustomerType } from "@/app/page"
 import { Card, CardContent } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
-import { UserCheck, UserPlus, ArrowRight } from "lucide-react"
+import { ArrowRight, UserCheck, UserPlus } from "lucide-react"
 
 interface CustomerTypeStepProps {
   onSelect: (type: CustomerType) => void
@@ -11,27 +11,28 @@ interface CustomerTypeStepProps {
 
 export function CustomerTypeStep({ onSelect }: CustomerTypeStepProps) {
   return (
-    <div className="space-y-4">
-      {/* Hero Section */}
-      <div className="text-center lg:text-left space-y-3 max-w-2xl mx-auto lg:mx-0">
-        <h2 className="text-2xl sm:text-3xl font-serif font-medium tracking-tight text-balance leading-snug">
-          Welcome to the Claire Sailesh Car Rental Customer Portal
-        </h2>
-        <p className="text-base text-muted-foreground leading-relaxed">
-          Create your rental contract request in a few simple steps. Let&apos;s start by identifying your customer status.
-        </p>
+    <div className="space-y-6">
+      <div className="space-y-4">
+        <span className="section-kicker">Step 1</span>
+        <div className="max-w-3xl space-y-3">
+          <h2 className="text-3xl font-serif font-semibold leading-tight sm:text-4xl">
+            Welcome to the Claire Sailesh Car Rental Customer Portal
+          </h2>
+          <p className="max-w-2xl text-base leading-7 text-muted-foreground">
+            Create your rental contract request in a few simple steps. Start by
+            choosing whether you already have a customer profile with us.
+          </p>
+        </div>
       </div>
 
-      {/* Question */}
-      <div className="space-y-1">
-        <h3 className="text-base font-medium">Are you already a customer?</h3>
-        <p className="text-sm text-muted-foreground">
+      <div className="rounded-[1.75rem] border border-border/70 bg-secondary/25 p-4 sm:p-5">
+        <h3 className="text-base font-semibold text-foreground">Are you already a customer?</h3>
+        <p className="mt-1 text-sm leading-6 text-muted-foreground">
           Select your customer type to proceed with the appropriate form.
         </p>
       </div>
 
-      {/* Selection Cards */}
-      <div className="grid sm:grid-cols-2 gap-3 sm:gap-4">
+      <div className="grid gap-4 sm:grid-cols-2">
         <SelectionCard
           icon={UserCheck}
           title="Yes, I&apos;m already a customer"
@@ -61,31 +62,33 @@ function SelectionCard({
   onClick: () => void
 }) {
   return (
-    <Card
-      className={cn(
-        "group cursor-pointer transition-all duration-300",
-        "hover:border-primary/50 hover:shadow-lg hover:shadow-primary/5",
-        "active:scale-[0.98]"
-      )}
-      onClick={onClick}
-    >
-      <CardContent className="p-5 sm:p-6">
-        <div className="flex flex-col h-full">
-          <div className="w-12 h-12 rounded-2xl bg-secondary flex items-center justify-center mb-4 group-hover:bg-primary/10 transition-colors duration-300">
-            <Icon className="w-6 h-6 text-primary" />
+    <button type="button" onClick={onClick} className="w-full text-left">
+      <Card
+        className={cn(
+          "group h-full cursor-pointer overflow-hidden border-border/70 transition-all duration-300",
+          "hover:-translate-y-1 hover:border-primary/30 hover:shadow-[0_28px_60px_-36px_rgba(15,36,74,0.5)]",
+          "focus-within:border-primary/40 focus-within:ring-4 focus-within:ring-ring/25",
+          "active:translate-y-0"
+        )}
+      >
+        <CardContent className="p-6 sm:p-7">
+          <div className="flex h-full flex-col">
+            <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-[1.35rem] bg-[linear-gradient(145deg,var(--accent),color-mix(in_oklch,var(--secondary)_72%,white))] shadow-inner">
+              <Icon className="h-6 w-6 text-foreground" />
+            </div>
+            <h4 className="mb-2 text-lg font-semibold group-hover:text-primary">
+              {title}
+            </h4>
+            <p className="flex-1 text-sm leading-7 text-muted-foreground">
+              {description}
+            </p>
+            <div className="mt-5 flex items-center gap-2 text-sm font-semibold text-primary">
+              <span>Continue</span>
+              <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
+            </div>
           </div>
-          <h4 className="text-base font-medium mb-1 group-hover:text-primary transition-colors">
-            {title}
-          </h4>
-          <p className="text-sm text-muted-foreground leading-relaxed flex-1">
-            {description}
-          </p>
-          <div className="flex items-center gap-2 mt-4 text-sm font-medium text-primary opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-            <span>Continue</span>
-            <ArrowRight className="w-4 h-4" />
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </button>
   )
 }

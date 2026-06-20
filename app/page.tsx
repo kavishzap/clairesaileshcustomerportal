@@ -2,7 +2,6 @@
 
 import { useState } from "react"
 import {
-  MSG_COMPLETE_CUSTOMER_FIRST,
   MSG_CONTRACT_SUBMIT_FAILED,
 } from "@/lib/portal-messages"
 import { ProgressStepper } from "@/components/portal/progress-stepper"
@@ -34,6 +33,7 @@ export interface CustomerInfo {
 export interface ContractDetails {
   customerStatus: string
   draftStatus: string
+  rentalPeriodMode: "inclusive" | "exclusive"
   startDate: string
   endDate: string
   deliveryTime: string
@@ -63,6 +63,7 @@ export default function CustomerPortal() {
   const [contractDetails, setContractDetails] = useState<ContractDetails>({
     customerStatus: "",
     draftStatus: "",
+    rentalPeriodMode: "inclusive",
     startDate: "",
     endDate: "",
     deliveryTime: "",
@@ -192,19 +193,25 @@ export default function CustomerPortal() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <main className="flex flex-col">
-        {/* Progress Stepper */}
-        <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
-            <ProgressStepper steps={steps} currentStep={currentStep} />
-          </div>
-        </div>
+    <div className="min-h-screen">
+      <main id="main-content" className="portal-shell">
+        <section className="mx-auto max-w-5xl space-y-5">
+          <div className="portal-panel overflow-hidden">
+            <div className="sticky top-3 z-10 border-b border-border/70 bg-background/65 px-4 py-4 backdrop-blur-sm sm:px-5 lg:px-6">
+              <div className="mb-3">
+                <p className="section-kicker">Rental request</p>
+                <h1 className="mt-3 font-serif text-2xl font-semibold text-foreground sm:text-3xl">
+                  Customer portal
+                </h1>
+              </div>
+              <ProgressStepper steps={steps} currentStep={currentStep} />
+            </div>
 
-        {/* Form Content */}
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-3 lg:py-4">
-          {renderStep()}
-        </div>
+            <div className="px-4 py-5 sm:px-5 sm:py-6 lg:px-6 lg:py-7">
+              {renderStep()}
+            </div>
+          </div>
+        </section>
       </main>
     </div>
   )

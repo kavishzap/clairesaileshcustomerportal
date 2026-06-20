@@ -8,25 +8,25 @@ interface ProgressStepperProps {
 
 export function ProgressStepper({ steps, currentStep }: ProgressStepperProps) {
   return (
-    <div className="w-full">
-      {/* Mobile View - Compact */}
+    <div className="w-full" aria-label="Progress">
       <div className="lg:hidden">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-sm font-medium text-foreground">
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <span className="text-sm font-semibold text-foreground">
             Step {currentStep} of {steps.length}
           </span>
-          <span className="text-sm text-muted-foreground">{steps[currentStep - 1]}</span>
+          <span className="max-w-[14rem] truncate text-right text-sm text-muted-foreground">
+            {steps[currentStep - 1]}
+          </span>
         </div>
-        <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+        <div className="overflow-hidden rounded-full bg-secondary/65">
           <div
-            className="h-full bg-primary transition-all duration-500 ease-out rounded-full"
+            className="h-2 rounded-full bg-[linear-gradient(90deg,var(--accent),var(--primary),var(--secondary))] transition-all duration-500 ease-out"
             style={{ width: `${(currentStep / steps.length) * 100}%` }}
           />
         </div>
       </div>
 
-      {/* Desktop View - Full Stepper */}
-      <div className="hidden lg:flex items-center justify-between">
+      <ol className="hidden lg:flex items-center justify-between" aria-label="Portal steps">
         {steps.map((step, index) => {
           const stepNumber = index + 1
           const isCompleted = currentStep > stepNumber
@@ -34,15 +34,15 @@ export function ProgressStepper({ steps, currentStep }: ProgressStepperProps) {
           const isUpcoming = currentStep < stepNumber
 
           return (
-            <div key={step} className="flex items-center flex-1 last:flex-none">
+            <li key={step} className="flex items-center flex-1 last:flex-none">
               <div className="flex items-center gap-3">
-                {/* Step Circle */}
                 <div
+                  aria-current={isCurrent ? "step" : undefined}
                   className={cn(
-                    "w-9 h-9 rounded-full flex items-center justify-center text-sm font-medium transition-all duration-300",
-                    isCompleted && "bg-primary text-primary-foreground",
-                    isCurrent && "bg-primary text-primary-foreground ring-4 ring-primary/20",
-                    isUpcoming && "bg-muted text-muted-foreground"
+                    "flex h-11 w-11 items-center justify-center rounded-full border text-sm font-semibold transition-all duration-300",
+                    isCompleted && "border-primary bg-primary text-primary-foreground shadow-[0_12px_24px_-16px_rgba(15,36,74,0.65)]",
+                    isCurrent && "border-accent bg-white text-foreground ring-4 ring-accent/30",
+                    isUpcoming && "border-border bg-white/55 text-muted-foreground"
                   )}
                 >
                   {isCompleted ? (
@@ -52,10 +52,9 @@ export function ProgressStepper({ steps, currentStep }: ProgressStepperProps) {
                   )}
                 </div>
 
-                {/* Step Label */}
                 <span
                   className={cn(
-                    "text-sm font-medium transition-colors duration-300 hidden xl:block",
+                    "hidden text-sm font-semibold transition-colors duration-300 xl:block",
                     isCompleted && "text-foreground",
                     isCurrent && "text-foreground",
                     isUpcoming && "text-muted-foreground"
@@ -65,23 +64,22 @@ export function ProgressStepper({ steps, currentStep }: ProgressStepperProps) {
                 </span>
               </div>
 
-              {/* Connector Line */}
               {index < steps.length - 1 && (
                 <div className="flex-1 mx-4">
-                  <div className="h-0.5 bg-muted rounded-full overflow-hidden">
+                  <div className="h-1 overflow-hidden rounded-full bg-secondary/60">
                     <div
                       className={cn(
-                        "h-full bg-primary transition-all duration-500 ease-out",
+                        "h-full bg-[linear-gradient(90deg,var(--accent),var(--primary))] transition-all duration-500 ease-out",
                         isCompleted ? "w-full" : "w-0"
                       )}
                     />
                   </div>
                 </div>
               )}
-            </div>
+            </li>
           )
         })}
-      </div>
+      </ol>
     </div>
   )
 }

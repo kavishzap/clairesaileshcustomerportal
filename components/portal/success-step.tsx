@@ -1,15 +1,16 @@
 "use client"
 
+import { useState } from "react"
+import type { ReactNode } from "react"
 import { ContractDetails } from "@/app/page"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { CheckCircle2, Home, MessageCircle, Calendar, MapPin, Copy, Check } from "lucide-react"
-import { useState } from "react"
+import { Calendar, Check, CheckCircle2, Copy, Home, MapPin, MessageCircle } from "lucide-react"
 
 const OWNER_WHATSAPP_E164 = "23057985913"
 
 function buildOwnerWhatsAppUrl(contractNumber: string): string {
-  const text = `Hey — a rental contract request was submitted with all details filled in. Contract: ${contractNumber}. Please confirm and share vehicle / car information with the customer.`
+  const text = `Hey - a rental contract request was submitted with all details filled in. Contract: ${contractNumber}. Please confirm and share vehicle / car information with the customer.`
   return `https://wa.me/${OWNER_WHATSAPP_E164}?text=${encodeURIComponent(text)}`
 }
 
@@ -27,70 +28,63 @@ export function SuccessStep({ contractDetails }: SuccessStepProps) {
   }
 
   return (
-    <div className="space-y-8 max-w-2xl mx-auto">
-      {/* Success Animation */}
-      <div className="text-center space-y-4">
+    <div className="mx-auto max-w-3xl space-y-8">
+      <div className="text-center">
         <div className="relative inline-flex">
-          <div className="w-24 h-24 rounded-full bg-green-500/10 flex items-center justify-center animate-in zoom-in duration-500">
-            <CheckCircle2 className="w-14 h-14 text-green-500" />
+          <div className="flex h-24 w-24 items-center justify-center rounded-full bg-[linear-gradient(145deg,color-mix(in_oklch,var(--success)_45%,white),color-mix(in_oklch,var(--accent)_36%,white))] shadow-[0_26px_52px_-28px_rgba(26,128,76,0.55)] animate-in zoom-in duration-500">
+            <CheckCircle2 className="h-14 w-14 text-success-foreground" />
           </div>
-          <div className="absolute inset-0 w-24 h-24 rounded-full bg-green-500/20 animate-ping" />
+          <div className="absolute inset-0 h-24 w-24 rounded-full bg-success/15 animate-ping" />
         </div>
-        
-        <div className="space-y-2">
-          <h2 className="text-2xl sm:text-3xl font-serif font-medium text-balance">
-            Request Submitted Successfully
+
+        <div className="mt-5 space-y-2">
+          <span className="section-kicker">Step 5</span>
+          <h2 className="mt-4 text-3xl font-serif font-semibold sm:text-4xl">
+            Request submitted successfully
           </h2>
-          <p className="text-muted-foreground">
-            Your rental contract request has been received. We&apos;ll be in touch shortly.
+          <p className="mx-auto max-w-2xl text-base leading-7 text-muted-foreground">
+            Your rental contract request has been received. Keep the contract number handy while
+            the owner confirms the vehicle details.
           </p>
         </div>
       </div>
 
-      {/* Contract Number Card */}
-      <Card className="rounded-2xl border-accent/30 bg-accent/5">
-        <CardContent className="p-6">
-          <div className="text-center space-y-3">
-            <p className="text-sm text-muted-foreground">Your Contract Number</p>
-            <div className="flex items-center justify-center gap-3">
-              <p className="text-3xl font-bold font-mono tracking-wider">
+      <Card className="portal-card rounded-[1.9rem] border-accent/35 bg-[linear-gradient(180deg,color-mix(in_oklch,var(--accent)_24%,white),white)]">
+        <CardContent className="p-6 sm:p-8">
+          <div className="space-y-3 text-center">
+            <p className="text-sm font-medium uppercase tracking-[0.18em] text-muted-foreground">
+              Your Contract Number
+            </p>
+            <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
+              <p className="break-all text-3xl font-bold tracking-[0.18em] text-foreground sm:text-4xl">
                 {contractDetails.contractNumber}
               </p>
               <Button
-                variant="ghost"
+                variant="outline"
                 size="icon"
                 onClick={copyContractNumber}
-                className="h-9 w-9 rounded-lg"
+                aria-label="Copy contract number"
               >
-                {copied ? (
-                  <Check className="w-4 h-4 text-green-500" />
-                ) : (
-                  <Copy className="w-4 h-4" />
-                )}
+                {copied ? <Check className="h-4 w-4 text-success" /> : <Copy className="h-4 w-4" />}
               </Button>
             </div>
-            <p className="text-xs text-muted-foreground">
-              Keep this number for your records
-            </p>
+            <p className="field-note">Keep this number for your records.</p>
 
-            <div className="mt-6 pt-6 border-t border-green-500/25 -mx-6 px-6 pb-6 rounded-b-2xl bg-green-500/5 text-center">
-              <p className="text-xs font-semibold uppercase tracking-wide text-green-700 dark:text-green-400 mb-2">
-                Important — notify the owner
+            <div className="mt-6 rounded-[1.6rem] border border-success/25 bg-white/68 p-5 text-center">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-success-foreground">
+                Important - notify the owner
               </p>
-              <p className="text-sm text-foreground/90 mb-4 max-w-md mx-auto">
+              <p className="mx-auto mt-3 max-w-xl text-sm leading-7 text-foreground/88">
                 Send a WhatsApp so the owner knows you submitted this request with complete
                 details. They can then assign a vehicle and share car information with you.
               </p>
-              <Button
-                asChild
-                className="w-full h-12 rounded-xl bg-green-600 text-white hover:bg-green-700 shadow-md shadow-green-900/10"
-              >
+              <Button asChild className="mt-5 h-12 w-full bg-[linear-gradient(145deg,#1f9a5c,#147444)] text-white hover:brightness-105">
                 <a
                   href={buildOwnerWhatsAppUrl(contractDetails.contractNumber)}
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  <MessageCircle className="w-4 h-4 mr-2" />
+                  <MessageCircle className="mr-2 h-4 w-4" />
                   Send WhatsApp to owner
                 </a>
               </Button>
@@ -99,64 +93,65 @@ export function SuccessStep({ contractDetails }: SuccessStepProps) {
         </CardContent>
       </Card>
 
-      {/* Quick Summary Card */}
-      <Card className="rounded-2xl">
+      <Card className="portal-card rounded-[1.75rem]">
         <CardHeader>
-          <CardTitle className="text-lg">Booking Summary</CardTitle>
+          <CardTitle className="text-lg">Booking summary</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex items-start gap-3">
-            <div className="w-9 h-9 rounded-lg bg-secondary flex items-center justify-center flex-shrink-0">
-              <Calendar className="w-4 h-4 text-muted-foreground" />
-            </div>
-            <div>
-              <p className="text-sm font-medium">Rental Period</p>
-              <p className="text-sm text-muted-foreground">
-                {formatDate(contractDetails.startDate)} – {formatDate(contractDetails.endDate)}
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                {contractDetails.numberOfDays} {contractDetails.numberOfDays === 1 ? "Day" : "Days"}
-              </p>
-            </div>
-          </div>
-          
-          <div className="flex items-start gap-3">
-            <div className="w-9 h-9 rounded-lg bg-secondary flex items-center justify-center flex-shrink-0">
-              <MapPin className="w-4 h-4 text-muted-foreground" />
-            </div>
-            <div>
-              <p className="text-sm font-medium">Locations</p>
-              <p className="text-sm text-muted-foreground">
-                Delivery: {contractDetails.deliveryPlace}
-              </p>
-              <p className="text-sm text-muted-foreground">
-                Recovery: {contractDetails.recoveryPlace}
-              </p>
-            </div>
-          </div>
+          <SummaryItem
+            icon={<Calendar className="h-4 w-4 text-foreground" />}
+            title="Rental period"
+            detail={`${formatDate(contractDetails.startDate)} to ${formatDate(contractDetails.endDate)}`}
+            caption={`${contractDetails.numberOfDays} ${contractDetails.numberOfDays === 1 ? "Day" : "Days"}`}
+          />
+          <SummaryItem
+            icon={<MapPin className="h-4 w-4 text-foreground" />}
+            title="Locations"
+            detail={`Delivery: ${contractDetails.deliveryPlace}`}
+            caption={`Recovery: ${contractDetails.recoveryPlace}`}
+          />
         </CardContent>
       </Card>
 
-      {/* Actions */}
-      <div className="flex flex-col sm:flex-row gap-3 pt-2">
-        <Button
-          variant="outline"
-          onClick={() => (window.location.href = "/")}
-          className="h-12 rounded-xl px-6 w-full sm:max-w-md mx-auto"
-        >
-          <Home className="w-4 h-4 mr-2" />
+      <div className="flex justify-center pt-2">
+        <Button variant="outline" onClick={() => (window.location.href = "/")} className="h-12 w-full max-w-md px-6">
+          <Home className="mr-2 h-4 w-4" />
           Back to Portal
         </Button>
       </div>
 
-      {/* Footer Note */}
       <div className="text-center">
         <p className="text-xs text-muted-foreground">
           Questions? Contact us at{" "}
-          <a href="mailto:support@clairesailesh.com" className="text-primary hover:underline">
+          <a href="mailto:support@clairesailesh.com" className="font-semibold text-primary hover:underline">
             support@clairesailesh.com
           </a>
         </p>
+      </div>
+    </div>
+  )
+}
+
+function SummaryItem({
+  icon,
+  title,
+  detail,
+  caption,
+}: {
+  icon: ReactNode
+  title: string
+  detail: string
+  caption: string
+}) {
+  return (
+    <div className="flex items-start gap-3 rounded-[1.25rem] border border-border/55 bg-white/45 p-4">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[linear-gradient(145deg,var(--accent),color-mix(in_oklch,var(--secondary)_72%,white))]">
+        {icon}
+      </div>
+      <div>
+        <p className="text-sm font-semibold">{title}</p>
+        <p className="mt-1 text-sm text-muted-foreground">{detail}</p>
+        <p className="mt-1 text-xs text-muted-foreground">{caption}</p>
       </div>
     </div>
   )

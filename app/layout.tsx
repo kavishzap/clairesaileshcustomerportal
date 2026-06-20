@@ -1,15 +1,15 @@
 import type { Metadata } from 'next'
-import { Inter, Playfair_Display } from 'next/font/google'
+import { Manrope, Fraunces } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 import { Toaster } from '@/components/ui/toaster'
 
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
-const playfair = Playfair_Display({ subsets: ["latin"], variable: "--font-playfair" });
+const manrope = Manrope({ subsets: ['latin'], variable: '--font-manrope' })
+const fraunces = Fraunces({ subsets: ['latin'], variable: '--font-fraunces' })
 
 export const metadata: Metadata = {
-  title: 'Customer Portal',
-  description: 'Create your rental contract request in a few simple steps',
+  title: 'Claire Sailesh Car Rental Portal',
+  description: 'Create your rental contract request in a clear, guided experience.',
   generator: 'v0.app',
   icons: {
     icon: [
@@ -37,7 +37,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${inter.variable} ${playfair.variable} font-sans antialiased`}>
+      <body className={`${manrope.variable} ${fraunces.variable} font-sans antialiased`}>
+        <a
+          href="#main-content"
+          className="skip-link"
+        >
+          Skip to main content
+        </a>
         {children}
         <Toaster />
         <Analytics />
