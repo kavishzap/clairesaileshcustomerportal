@@ -7,7 +7,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { ArrowLeft, ArrowRight, Calendar, Clock, MapPin } from "lucide-react"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { PAYMENT_OPTIONS } from "@/lib/portal-payment-options"
+import { ArrowLeft, ArrowRight, Calendar, Clock, CreditCard, MapPin } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface ContractDetailsFormProps {
@@ -43,6 +51,7 @@ export function ContractDetailsForm({ initialData, onSubmit, onBack }: ContractD
     if (!formData.recoveryTime) newErrors.recoveryTime = "Recovery time is required"
     if (!(formData.deliveryPlace || "").trim()) newErrors.deliveryPlace = "Delivery location is required"
     if (!(formData.recoveryPlace || "").trim()) newErrors.recoveryPlace = "Recovery location is required"
+    if (!formData.paymentMode) newErrors.paymentMode = "Please select a payment option"
 
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
@@ -238,6 +247,55 @@ export function ContractDetailsForm({ initialData, onSubmit, onBack }: ContractD
                 {errors.recoveryPlace && <p id="recovery-place-error" className="error-text">{errors.recoveryPlace}</p>}
               </div>
             </div>
+          </CardContent>
+        </Card>
+
+        <Card className="portal-card rounded-[1.75rem]">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-xl">
+              <CreditCard className="h-5 w-5" />
+              Payment option
+            </CardTitle>
+            <CardDescription>How would you like to pay for this rental?</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <Label htmlFor="paymentMode">Payment method</Label>
+            <Select
+              value={formData.paymentMode || undefined}
+              onValueChange={(value) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  paymentMode: value as ContractDetails["paymentMode"],
+                }))
+              }
+            >
+              <SelectTrigger
+                id="paymentMode"
+                aria-invalid={!!errors.paymentMode}
+                aria-describedby={errors.paymentMode ? "payment-mode-error" : "payment-mode-note"}
+                className={cn(
+                  "h-12 w-full rounded-xl",
+                  errors.paymentMode && "border-destructive focus-visible:ring-destructive"
+                )}
+              >
+                <SelectValue placeholder="Select payment option" />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl">
+                {PAYMENT_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {errors.paymentMode && (
+              <p id="payment-mode-error" className="error-text">
+                {errors.paymentMode}
+              </p>
+            )}
+            <p id="payment-mode-note" className="field-note">
+              Choose how you plan to settle the rental payment.
+            </p>
           </CardContent>
         </Card>
 

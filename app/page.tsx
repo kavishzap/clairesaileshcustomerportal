@@ -11,6 +11,7 @@ import { NewCustomerForm } from "@/components/portal/new-customer-form"
 import { ContractDetailsForm } from "@/components/portal/contract-details-form"
 import { ReviewStep } from "@/components/portal/review-step"
 import { SuccessStep } from "@/components/portal/success-step"
+import type { PaymentOption } from "@/lib/portal-payment-options"
 
 export type CustomerType = "existing" | "new" | null
 
@@ -24,8 +25,12 @@ export interface CustomerInfo {
   country?: string
   address?: string
   nicPassportNumber?: string
+  /** Maps to `customers.age`. */
+  age?: string
   /** Maps to `customers.license` (driving licence number). */
   drivingLicenceNumber?: string
+  /** Maps to `customers.driving_exp` (years of driving experience). */
+  drivingExp?: string
   /** Supabase `customers.id` — set after existing-customer verification or new-customer POST on step 2. */
   customerId?: string
 }
@@ -42,6 +47,8 @@ export interface ContractDetails {
   recoveryPlace: string
   numberOfDays: number
   contractNumber: string
+  /** Maps to `contracts_details.payment_mode`. */
+  paymentMode: PaymentOption | ""
 }
 
 export default function CustomerPortal() {
@@ -57,7 +64,9 @@ export default function CustomerPortal() {
     country: "",
     address: "",
     nicPassportNumber: "",
+    age: "",
     drivingLicenceNumber: "",
+    drivingExp: "",
     customerId: undefined,
   }))
   const [contractDetails, setContractDetails] = useState<ContractDetails>({
@@ -72,6 +81,7 @@ export default function CustomerPortal() {
     recoveryPlace: "",
     numberOfDays: 0,
     contractNumber: `CS-2026-${String(Math.floor(Math.random() * 900000) + 100000).slice(0, 6)}`,
+    paymentMode: "",
   })
 
   const steps = ["Customer Type", "Customer Info", "Contract Details", "Review", "Success"]
@@ -86,7 +96,9 @@ export default function CustomerPortal() {
     country: "",
     address: "",
     nicPassportNumber: "",
+    age: "",
     drivingLicenceNumber: "",
+    drivingExp: "",
     customerId: undefined,
   })
 

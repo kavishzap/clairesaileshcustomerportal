@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { toast } from "@/hooks/use-toast"
 import { MSG_CONTRACT_SUBMIT_FAILED } from "@/lib/portal-messages"
-import { ArrowLeft, Calendar, Check, Clock, Info, MapPin, User } from "lucide-react"
+import { getPaymentOptionLabel } from "@/lib/portal-payment-options"
+import { ArrowLeft, Calendar, Check, Clock, CreditCard, Info, MapPin, User } from "lucide-react"
 
 interface ReviewStepProps {
   customerType: CustomerType
@@ -71,8 +72,17 @@ export function ReviewStep({
                 <ReviewRow label="Email" value={customerInfo.email} />
                 <ReviewRow label="Phone" value={customerInfo.phone || "Not provided"} />
                 <ReviewRow label="NIC / Passport" value={customerInfo.nicLicence || "Not provided"} />
+                {customerInfo.age?.trim() ? (
+                  <ReviewRow label="Age" value={customerInfo.age.trim()} />
+                ) : null}
                 {customerInfo.drivingLicenceNumber?.trim() ? (
                   <ReviewRow label="Driving licence number" value={customerInfo.drivingLicenceNumber.trim()} />
+                ) : null}
+                {customerInfo.drivingExp?.trim() ? (
+                  <ReviewRow
+                    label="Years of driving experience"
+                    value={`${customerInfo.drivingExp.trim()} ${Number(customerInfo.drivingExp) === 1 ? "year" : "years"}`}
+                  />
                 ) : null}
                 <ReviewRow label="Location" value={`${customerInfo.city}, ${customerInfo.country}`} />
                 {customerInfo.address ? <ReviewRow label="Address" value={customerInfo.address} /> : null}
@@ -107,6 +117,11 @@ export function ReviewStep({
             <ReviewRow label="Recovery Time" value={formatTime(contractDetails.recoveryTime)} icon={<Clock className="h-4 w-4" />} />
             <ReviewRow label="Delivery Location" value={contractDetails.deliveryPlace} icon={<MapPin className="h-4 w-4" />} />
             <ReviewRow label="Recovery Location" value={contractDetails.recoveryPlace} icon={<MapPin className="h-4 w-4" />} />
+            <ReviewRow
+              label="Payment option"
+              value={contractDetails.paymentMode ? getPaymentOptionLabel(contractDetails.paymentMode) : "Not selected"}
+              icon={<CreditCard className="h-4 w-4" />}
+            />
           </CardContent>
         </Card>
       </div>

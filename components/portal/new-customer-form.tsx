@@ -1,16 +1,24 @@
 "use client"
 
-import { useState } from "react"
+import { useRef, useState } from "react"
 import { CustomerInfo } from "@/app/page"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { ArrowLeft, ArrowRight } from "lucide-react"
+import { ArrowLeft, ArrowRight, MessageCircle, Phone, TriangleAlert } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { toast } from "@/hooks/use-toast"
-import { MSG_PROFILE_SAVE_FAILED } from "@/lib/portal-messages"
+import { MSG_DRIVER_NOT_ELIGIBLE, MSG_PROFILE_SAVE_FAILED } from "@/lib/portal-messages"
+import {
+  buildOwnerWhatsAppUrl,
+  MIN_DRIVER_AGE,
+  MIN_DRIVING_EXP_YEARS,
+  OWNER_PHONE_DISPLAY,
+  OWNER_PHONE_TEL,
+} from "@/lib/portal-owner"
 
 interface NewCustomerFormProps {
   initialData: CustomerInfo
@@ -22,8 +30,14 @@ export function NewCustomerForm({ initialData, onSubmit, onBack }: NewCustomerFo
   const [formData, setFormData] = useState<CustomerInfo>(initialData)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [eligibilityBlocked, setEligibilityBlocked] = useState(false)
+  const eligibilityAlertRef = useRef<HTMLDivElement>(null)
 
-  const validateForm = () => {
+  const clearEligibilityBlock = () => {
+    if (eligibilityBlocked) setEligibilityBlocked(false)
+  }
+
+  const validateForm = (): { valid: boolean; ineligible: boolean } => {
     const newErrors: Record<string, string> = {}
 
     if (!formData.firstName?.trim()) newErrors.firstName = "First name is required"
@@ -38,14 +52,56 @@ export function NewCustomerForm({ initialData, onSubmit, onBack }: NewCustomerFo
     if (!formData.country?.trim()) newErrors.country = "Country is required"
     if (!formData.city?.trim()) newErrors.city = "City is required"
 
+    const ageRaw = formData.age?.trim()
+    if (!ageRaw) {
+      newErrors.age = "Age is required"
+    } else {
+      const age = Number.parseInt(ageRaw, 10)
+      if (Number.isNaN(age) || age < 18 || age > 120) {
+        newErrors.age = "Please enter a valid age between 18 and 120"
+      }
+    }
+
+    const drivingExpRaw = formData.drivingExp?.trim()
+    if (!drivingExpRaw) {
+      newErrors.drivingExp = "Years of driving experience is required"
+    } else {
+      const drivingExp = Number.parseInt(drivingExpRaw, 10)
+      if (Number.isNaN(drivingExp) || drivingExp < 0 || drivingExp > 80) {
+        newErrors.drivingExp = "Please enter a valid number of years between 0 and 80"
+      }
+    }
+
     setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
+    if (Object.keys(newErrors).length > 0) {
+      setEligibilityBlocked(false)
+      return { valid: false, ineligible: false }
+    }
+
+    const age = Number.parseInt(ageRaw, 10)
+    const drivingExp = Number.parseInt(drivingExpRaw, 10)
+    const ineligible = age < MIN_DRIVER_AGE || drivingExp < MIN_DRIVING_EXP_YEARS
+    setEligibilityBlocked(ineligible)
+    return { valid: !ineligible, ineligible }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!validateForm()) return
+    const validation = validateForm()
+    if (!validation.valid) {
+      if (validation.ineligible) {
+        toast({
+          variant: "destructive",
+          title: "Unable to continue online",
+          description: `Please contact the owner directly at ${OWNER_PHONE_DISPLAY}.`,
+        })
+        requestAnimationFrame(() => {
+          eligibilityAlertRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
+        })
+      }
+      return
+    }
 
     const existingId = (formData.customerId || initialData.customerId)?.trim()
     if (existingId) {
@@ -68,7 +124,9 @@ export function NewCustomerForm({ initialData, onSubmit, onBack }: NewCustomerFo
           lastName: formData.lastName,
           phone: formData.phone,
           nicLicence: formData.nicLicence,
+          age: formData.age,
           drivingLicenceNumber: formData.drivingLicenceNumber,
+          drivingExp: formData.drivingExp,
           address: formData.address,
           city: formData.city,
           country: formData.country,
@@ -178,6 +236,30 @@ export function NewCustomerForm({ initialData, onSubmit, onBack }: NewCustomerFo
             </div>
 
             <div className="space-y-2">
+              <Label htmlFor="age">Age</Label>
+              <Input
+                id="age"
+                type="number"
+                inputMode="numeric"
+                min={18}
+                max={120}
+                placeholder="e.g. 32"
+                value={formData.age ?? ""}
+                onChange={(e) => {
+                  clearEligibilityBlock()
+                  setFormData((prev) => ({ ...prev, age: e.target.value }))
+                }}
+                aria-invalid={!!errors.age}
+                aria-describedby={errors.age ? "age-error" : "age-note"}
+                className={cn("h-12 rounded-xl", errors.age && "border-destructive focus-visible:ring-destructive")}
+              />
+              {errors.age && <p id="age-error" className="error-text">{errors.age}</p>}
+              <p id="age-note" className="field-note">
+                Required. You must be at least {MIN_DRIVER_AGE} years old to book online.
+              </p>
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="nicLicence">NIC / Passport number</Label>
               <Input
                 id="nicLicence"
@@ -193,7 +275,15 @@ export function NewCustomerForm({ initialData, onSubmit, onBack }: NewCustomerFo
                 National ID card or passport number stored with the customer profile.
               </p>
             </div>
+          </CardContent>
+        </Card>
 
+        <Card className="portal-card rounded-[1.75rem]">
+          <CardHeader>
+            <CardTitle className="text-xl">Driving licence</CardTitle>
+            <CardDescription>Your licence details for the rental</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="drivingLicenceNumber">Driving licence number</Label>
               <Input
@@ -206,9 +296,37 @@ export function NewCustomerForm({ initialData, onSubmit, onBack }: NewCustomerFo
                     drivingLicenceNumber: e.target.value,
                   }))
                 }
+                aria-describedby="driving-licence-note"
                 className="h-12 rounded-xl"
               />
-              <p className="field-note">Optional.</p>
+              <p id="driving-licence-note" className="field-note">Optional.</p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="drivingExp">Years of driving experience</Label>
+              <Input
+                id="drivingExp"
+                type="number"
+                inputMode="numeric"
+                min={0}
+                max={80}
+                placeholder="e.g. 5"
+                value={formData.drivingExp ?? ""}
+                onChange={(e) => {
+                  clearEligibilityBlock()
+                  setFormData((prev) => ({
+                    ...prev,
+                    drivingExp: e.target.value,
+                  }))
+                }}
+                aria-invalid={!!errors.drivingExp}
+                aria-describedby={errors.drivingExp ? "driving-exp-error" : "driving-exp-note"}
+                className={cn("h-12 rounded-xl", errors.drivingExp && "border-destructive focus-visible:ring-destructive")}
+              />
+              {errors.drivingExp && <p id="driving-exp-error" className="error-text">{errors.drivingExp}</p>}
+              <p id="driving-exp-note" className="field-note">
+                Required. You need at least {MIN_DRIVING_EXP_YEARS} years of driving experience to book online.
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -265,6 +383,38 @@ export function NewCustomerForm({ initialData, onSubmit, onBack }: NewCustomerFo
             </div>
           </CardContent>
         </Card>
+
+        {eligibilityBlocked && (
+          <div ref={eligibilityAlertRef}>
+            <Alert variant="destructive" className="border-destructive/30 bg-destructive/5">
+              <TriangleAlert className="h-5 w-5" />
+              <AlertTitle>Unable to continue online</AlertTitle>
+              <AlertDescription className="space-y-4 text-destructive/90">
+                <p>{MSG_DRIVER_NOT_ELIGIBLE}</p>
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <Button asChild variant="outline" className="h-11 border-destructive/30 bg-background">
+                    <a href={OWNER_PHONE_TEL}>
+                      <Phone className="mr-2 h-4 w-4" />
+                      Call {OWNER_PHONE_DISPLAY}
+                    </a>
+                  </Button>
+                  <Button asChild variant="outline" className="h-11 border-destructive/30 bg-background">
+                    <a
+                      href={buildOwnerWhatsAppUrl(
+                        "Hi, I tried to book a rental online but I do not meet the age or driving experience requirements. Can we discuss my booking?"
+                      )}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <MessageCircle className="mr-2 h-4 w-4" />
+                      WhatsApp owner
+                    </a>
+                  </Button>
+                </div>
+              </AlertDescription>
+            </Alert>
+          </div>
+        )}
 
         <div className="flex flex-col gap-3 pt-4 sm:flex-row">
           <Button type="button" variant="outline" onClick={onBack} className="h-12 px-6">

@@ -5,13 +5,13 @@ import type { ReactNode } from "react"
 import { ContractDetails } from "@/app/page"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Calendar, Check, CheckCircle2, Copy, Home, MapPin, MessageCircle } from "lucide-react"
+import { Calendar, Check, CheckCircle2, Copy, CreditCard, Home, MapPin, MessageCircle } from "lucide-react"
+import { buildOwnerWhatsAppUrl } from "@/lib/portal-owner"
+import { getPaymentOptionLabel } from "@/lib/portal-payment-options"
 
-const OWNER_WHATSAPP_E164 = "23057985913"
-
-function buildOwnerWhatsAppUrl(contractNumber: string): string {
+function buildContractOwnerWhatsAppUrl(contractNumber: string): string {
   const text = `Hey - a rental contract request was submitted with all details filled in. Contract: ${contractNumber}. Please confirm and share vehicle / car information with the customer.`
-  return `https://wa.me/${OWNER_WHATSAPP_E164}?text=${encodeURIComponent(text)}`
+  return buildOwnerWhatsAppUrl(text)
 }
 
 interface SuccessStepProps {
@@ -80,7 +80,7 @@ export function SuccessStep({ contractDetails }: SuccessStepProps) {
               </p>
               <Button asChild className="mt-5 h-12 w-full bg-[linear-gradient(145deg,#1f9a5c,#147444)] text-white hover:brightness-105">
                 <a
-                  href={buildOwnerWhatsAppUrl(contractDetails.contractNumber)}
+                  href={buildContractOwnerWhatsAppUrl(contractDetails.contractNumber)}
                   target="_blank"
                   rel="noopener noreferrer"
                 >
@@ -110,6 +110,14 @@ export function SuccessStep({ contractDetails }: SuccessStepProps) {
             detail={`Delivery: ${contractDetails.deliveryPlace}`}
             caption={`Recovery: ${contractDetails.recoveryPlace}`}
           />
+          {contractDetails.paymentMode ? (
+            <SummaryItem
+              icon={<CreditCard className="h-4 w-4 text-foreground" />}
+              title="Payment option"
+              detail={getPaymentOptionLabel(contractDetails.paymentMode)}
+              caption="Selected payment method"
+            />
+          ) : null}
         </CardContent>
       </Card>
 

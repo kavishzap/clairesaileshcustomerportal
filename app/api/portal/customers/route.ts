@@ -32,7 +32,7 @@ export async function POST(request: Request) {
       {
         error: result.error,
         hint:
-          "Ensure INSERT is allowed on public.customers (RLS policy or SUPABASE_SERVICE_ROLE_KEY). Columns: first_name, last_name, email, phone, nic_or_passport; optional address, city, country, license.",
+          "Ensure INSERT is allowed on public.customers (RLS policy or SUPABASE_SERVICE_ROLE_KEY). Columns: first_name, last_name, email, phone, nic_or_passport; optional address, city, country, age, license, driving_exp.",
       },
       { status: 400 }
     )

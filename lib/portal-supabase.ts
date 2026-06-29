@@ -10,8 +10,12 @@ export interface CustomerPayload {
   city?: string
   country?: string
   address?: string
+  /** Stored as `age` on public.customers. */
+  age?: string
   /** Driving licence number — stored as `license` on public.customers. */
   drivingLicenceNumber?: string
+  /** Years of driving experience — stored as `driving_exp` on public.customers. */
+  drivingExp?: string
   customerId?: string
 }
 
@@ -44,7 +48,7 @@ export async function restPost(
 /**
  * Inserts into public.customers:
  * first_name, last_name, email, phone, nic_or_passport (NOT NULL);
- * address, city, country, license (optional driving licence number).
+ * address, city, country, age, license, driving_exp (optional).
  */
 export async function createCustomerRow(
   supabaseUrl: string,
@@ -81,6 +85,18 @@ export async function createCustomerRow(
 
   const license = info.drivingLicenceNumber?.trim()
   if (license) row.license = license
+
+  const ageRaw = info.age?.trim()
+  if (ageRaw) {
+    const age = Number.parseInt(ageRaw, 10)
+    if (!Number.isNaN(age)) row.age = age
+  }
+
+  const drivingExpRaw = info.drivingExp?.trim()
+  if (drivingExpRaw) {
+    const driving_exp = Number.parseInt(drivingExpRaw, 10)
+    if (!Number.isNaN(driving_exp)) row.driving_exp = driving_exp
+  }
 
   const res = await restPost(supabaseUrl, key, "customers", row)
   const text = await res.text()

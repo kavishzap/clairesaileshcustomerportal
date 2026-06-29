@@ -14,3 +14,6 @@ export const MSG_CUSTOMER_NOT_FOUND =
 
 export const MSG_COMPLETE_CUSTOMER_FIRST =
   "Please go back and complete the customer step first, then try again."
+
+export const MSG_DRIVER_NOT_ELIGIBLE =
+  "Online bookings are only available for drivers aged 25 or over with at least 2 years of driving experience. Please contact the owner directly to arrange your rental."

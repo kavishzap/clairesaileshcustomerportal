@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { combineLocalDateTimeToIso } from "@/lib/portal-contract-map"
+import { isPaymentOption } from "@/lib/portal-payment-options"
 import {
   getSupabaseConfig,
   restPost,
@@ -16,6 +17,7 @@ interface ContractPayload {
   deliveryPlace: string
   recoveryPlace: string
   numberOfDays: number
+  paymentMode?: string
 }
 
 interface Body {
@@ -57,6 +59,7 @@ export async function POST(request: Request) {
     deliveryPlace,
     recoveryPlace,
     numberOfDays,
+    paymentMode,
   } = contractDetails
 
   if (!startDate || !endDate || !deliveryTime || !recoveryTime) {
@@ -64,6 +67,9 @@ export async function POST(request: Request) {
   }
   if (!(deliveryPlace || "").trim() || !(recoveryPlace || "").trim()) {
     return NextResponse.json({ error: "Delivery and recovery locations are required" }, { status: 400 })
+  }
+  if (!paymentMode || !isPaymentOption(paymentMode)) {
+    return NextResponse.json({ error: "A valid payment option is required" }, { status: 400 })
   }
 
   const customerId = customerInfo.customerId?.trim()
@@ -101,12 +107,15 @@ export async function POST(request: Request) {
     customerType,
     customerId,
     email: customerInfo.email,
+    payment_mode: paymentMode,
     ...(customerType === "new"
       ? {
           firstName: customerInfo.firstName,
           lastName: customerInfo.lastName,
           phone: customerInfo.phone,
+          age: customerInfo.age,
           drivingLicenceNumber: customerInfo.drivingLicenceNumber,
+          drivingExp: customerInfo.drivingExp,
         }
       : { nicPassportNumber: customerInfo.nicPassportNumber }),
   })
@@ -127,6 +136,7 @@ export async function POST(request: Request) {
     pickup_date: endIso,
     pickup_time: recoveryTime,
     pickup_place: recoveryPlace.trim(),
+    payment_mode: paymentMode,
     customer_data: customerData,
   }
 
