@@ -8,10 +8,18 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { ArrowLeft, ArrowRight, MessageCircle, Phone, TriangleAlert } from "lucide-react"
+import { ArrowLeft, ArrowRight, MessageCircle, Phone, TriangleAlert, UserCheck } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { toast } from "@/hooks/use-toast"
-import { MSG_DRIVER_NOT_ELIGIBLE, MSG_PROFILE_SAVE_FAILED } from "@/lib/portal-messages"
+import { useLanguage } from "@/components/i18n/language-provider"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import {
   buildOwnerWhatsAppUrl,
   MIN_DRIVER_AGE,
@@ -24,13 +32,21 @@ interface NewCustomerFormProps {
   initialData: CustomerInfo
   onSubmit: (data: CustomerInfo) => void
   onBack: () => void
+  onSwitchToExisting: (email: string) => void
 }
 
-export function NewCustomerForm({ initialData, onSubmit, onBack }: NewCustomerFormProps) {
+export function NewCustomerForm({
+  initialData,
+  onSubmit,
+  onBack,
+  onSwitchToExisting,
+}: NewCustomerFormProps) {
+  const { t, tf } = useLanguage()
   const [formData, setFormData] = useState<CustomerInfo>(initialData)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [eligibilityBlocked, setEligibilityBlocked] = useState(false)
+  const [existingProfileOpen, setExistingProfileOpen] = useState(false)
   const eligibilityAlertRef = useRef<HTMLDivElement>(null)
 
   const clearEligibilityBlock = () => {
@@ -40,41 +56,45 @@ export function NewCustomerForm({ initialData, onSubmit, onBack }: NewCustomerFo
   const validateForm = (): { valid: boolean; ineligible: boolean } => {
     const newErrors: Record<string, string> = {}
 
-    if (!formData.firstName?.trim()) newErrors.firstName = "First name is required"
-    if (!formData.lastName?.trim()) newErrors.lastName = "Last name is required"
+    if (!formData.firstName?.trim()) newErrors.firstName = t.newCustomer.firstNameRequired
+    if (!formData.lastName?.trim()) newErrors.lastName = t.newCustomer.lastNameRequired
     if (!formData.email) {
-      newErrors.email = "Email address is required"
+      newErrors.email = t.newCustomer.emailRequired
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = "Please enter a valid email address"
+      newErrors.email = t.newCustomer.emailInvalid
     }
-    if (!formData.phone?.trim()) newErrors.phone = "Phone number is required"
-    if (!formData.nicLicence?.trim()) newErrors.nicLicence = "NIC / Passport number is required"
-    if (!formData.country?.trim()) newErrors.country = "Country is required"
-    if (!formData.city?.trim()) newErrors.city = "City is required"
+    if (!formData.phone?.trim()) newErrors.phone = t.newCustomer.phoneRequired
+    if (!formData.nicLicence?.trim()) newErrors.nicLicence = t.newCustomer.nicRequired
+    if (!formData.country?.trim()) newErrors.country = t.newCustomer.countryRequired
+    if (!formData.city?.trim()) newErrors.city = t.newCustomer.cityRequired
 
     const ageRaw = formData.age?.trim()
     if (!ageRaw) {
-      newErrors.age = "Age is required"
+      newErrors.age = t.newCustomer.ageRequired
     } else {
       const age = Number.parseInt(ageRaw, 10)
       if (Number.isNaN(age) || age < 18 || age > 120) {
-        newErrors.age = "Please enter a valid age between 18 and 120"
+        newErrors.age = t.newCustomer.ageInvalid
       }
     }
 
     const drivingExpRaw = formData.drivingExp?.trim()
     if (!drivingExpRaw) {
-      newErrors.drivingExp = "Years of driving experience is required"
+      newErrors.drivingExp = t.newCustomer.drivingExpRequired
     } else {
       const drivingExp = Number.parseInt(drivingExpRaw, 10)
       if (Number.isNaN(drivingExp) || drivingExp < 0 || drivingExp > 80) {
-        newErrors.drivingExp = "Please enter a valid number of years between 0 and 80"
+        newErrors.drivingExp = t.newCustomer.drivingExpInvalid
       }
     }
 
     setErrors(newErrors)
     if (Object.keys(newErrors).length > 0) {
       setEligibilityBlocked(false)
+      return { valid: false, ineligible: false }
+    }
+
+    if (!ageRaw || !drivingExpRaw) {
       return { valid: false, ineligible: false }
     }
 
@@ -93,8 +113,8 @@ export function NewCustomerForm({ initialData, onSubmit, onBack }: NewCustomerFo
       if (validation.ineligible) {
         toast({
           variant: "destructive",
-          title: "Unable to continue online",
-          description: `Please contact the owner directly at ${OWNER_PHONE_DISPLAY}.`,
+          title: t.newCustomer.unableOnline,
+          description: tf(t.newCustomer.contactOwner, { phone: OWNER_PHONE_DISPLAY }),
         })
         requestAnimationFrame(() => {
           eligibilityAlertRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
@@ -106,8 +126,8 @@ export function NewCustomerForm({ initialData, onSubmit, onBack }: NewCustomerFo
     const existingId = (formData.customerId || initialData.customerId)?.trim()
     if (existingId) {
       toast({
-        title: "New customer profile has been created",
-        description: "Please continue with your contract details.",
+        title: t.newCustomer.profileCreated,
+        description: t.newCustomer.continueContract,
       })
       setTimeout(() => onSubmit({ ...formData, customerId: existingId }), 200)
       return
@@ -130,12 +150,22 @@ export function NewCustomerForm({ initialData, onSubmit, onBack }: NewCustomerFo
           address: formData.address,
           city: formData.city,
           country: formData.country,
+          flightNumber: formData.flightNumber,
         }),
       })
       const data = (await res.json().catch(() => ({}))) as {
         error?: string
         hint?: string
         id?: string
+        code?: string
+      }
+      if (res.status === 409 || data.code === "PROFILE_EXISTS") {
+        setExistingProfileOpen(true)
+        setErrors((prev) => ({
+          ...prev,
+          email: t.newCustomer.alreadyExistsTitle,
+        }))
+        return
       }
       if (!res.ok || !data.id) {
         if (process.env.NODE_ENV === "development") {
@@ -143,15 +173,15 @@ export function NewCustomerForm({ initialData, onSubmit, onBack }: NewCustomerFo
         }
         toast({
           variant: "destructive",
-          title: "Something went wrong",
-          description: MSG_PROFILE_SAVE_FAILED,
+          title: t.messages.somethingWentWrong,
+          description: t.messages.profileSaveFailed,
         })
         return
       }
 
       toast({
-        title: "New customer profile has been created",
-        description: "Please continue with your contract details.",
+        title: t.newCustomer.profileCreated,
+        description: t.newCustomer.continueContract,
       })
       setTimeout(() => onSubmit({ ...formData, customerId: data.id }), 200)
     } finally {
@@ -162,23 +192,23 @@ export function NewCustomerForm({ initialData, onSubmit, onBack }: NewCustomerFo
   return (
     <div className="space-y-8">
       <div className="space-y-3">
-        <span className="section-kicker">Step 2</span>
-        <h2 className="text-3xl font-serif font-semibold sm:text-4xl">Create your account</h2>
+        <span className="section-kicker">{tf(t.common.step, { n: 2 })}</span>
+        <h2 className="text-3xl font-serif font-semibold sm:text-4xl">{t.newCustomer.title}</h2>
         <p className="max-w-2xl text-base leading-7 text-muted-foreground">
-          Fill in your details to register and create your first rental contract.
+          {t.newCustomer.intro}
         </p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <Card className="portal-card rounded-[1.75rem]">
           <CardHeader>
-            <CardTitle className="text-xl">Personal information</CardTitle>
-            <CardDescription>Enter your basic details</CardDescription>
+            <CardTitle className="text-xl">{t.newCustomer.personalTitle}</CardTitle>
+            <CardDescription>{t.newCustomer.personalDesc}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="firstName">First Name</Label>
+                <Label htmlFor="firstName">{t.newCustomer.firstName}</Label>
                 <Input
                   id="firstName"
                   placeholder="John"
@@ -191,7 +221,7 @@ export function NewCustomerForm({ initialData, onSubmit, onBack }: NewCustomerFo
                 {errors.firstName && <p id="first-name-error" className="error-text">{errors.firstName}</p>}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="lastName">Last Name</Label>
+                <Label htmlFor="lastName">{t.newCustomer.lastName}</Label>
                 <Input
                   id="lastName"
                   placeholder="Doe"
@@ -206,7 +236,7 @@ export function NewCustomerForm({ initialData, onSubmit, onBack }: NewCustomerFo
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email">Email Address</Label>
+              <Label htmlFor="email">{t.newCustomer.email}</Label>
               <Input
                 id="email"
                 type="email"
@@ -221,7 +251,7 @@ export function NewCustomerForm({ initialData, onSubmit, onBack }: NewCustomerFo
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="phone">Phone Number</Label>
+              <Label htmlFor="phone">{t.newCustomer.phone}</Label>
               <Input
                 id="phone"
                 type="tel"
@@ -236,7 +266,7 @@ export function NewCustomerForm({ initialData, onSubmit, onBack }: NewCustomerFo
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="age">Age</Label>
+              <Label htmlFor="age">{t.newCustomer.age}</Label>
               <Input
                 id="age"
                 type="number"
@@ -255,12 +285,12 @@ export function NewCustomerForm({ initialData, onSubmit, onBack }: NewCustomerFo
               />
               {errors.age && <p id="age-error" className="error-text">{errors.age}</p>}
               <p id="age-note" className="field-note">
-                Required. You must be at least {MIN_DRIVER_AGE} years old to book online.
+                {tf(t.newCustomer.ageNote, { minAge: MIN_DRIVER_AGE })}
               </p>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="nicLicence">NIC / Passport number</Label>
+              <Label htmlFor="nicLicence">{t.newCustomer.nicLabel}</Label>
               <Input
                 id="nicLicence"
                 placeholder="784-1990-1234567-1"
@@ -272,7 +302,7 @@ export function NewCustomerForm({ initialData, onSubmit, onBack }: NewCustomerFo
               />
               {errors.nicLicence && <p id="nic-licence-error" className="error-text">{errors.nicLicence}</p>}
               <p id="nic-licence-note" className="field-note">
-                National ID card or passport number stored with the customer profile.
+                {t.newCustomer.nicNote}
               </p>
             </div>
           </CardContent>
@@ -280,12 +310,12 @@ export function NewCustomerForm({ initialData, onSubmit, onBack }: NewCustomerFo
 
         <Card className="portal-card rounded-[1.75rem]">
           <CardHeader>
-            <CardTitle className="text-xl">Driving licence</CardTitle>
-            <CardDescription>Your licence details for the rental</CardDescription>
+            <CardTitle className="text-xl">{t.newCustomer.drivingTitle}</CardTitle>
+            <CardDescription>{t.newCustomer.drivingDesc}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="drivingLicenceNumber">Driving licence number</Label>
+              <Label htmlFor="drivingLicenceNumber">{t.newCustomer.drivingLicenceNumber}</Label>
               <Input
                 id="drivingLicenceNumber"
                 placeholder="e.g. D12345678"
@@ -299,11 +329,11 @@ export function NewCustomerForm({ initialData, onSubmit, onBack }: NewCustomerFo
                 aria-describedby="driving-licence-note"
                 className="h-12 rounded-xl"
               />
-              <p id="driving-licence-note" className="field-note">Optional.</p>
+              <p id="driving-licence-note" className="field-note">{t.common.optional}</p>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="drivingExp">Years of driving experience</Label>
+              <Label htmlFor="drivingExp">{t.newCustomer.drivingExp}</Label>
               <Input
                 id="drivingExp"
                 type="number"
@@ -325,7 +355,7 @@ export function NewCustomerForm({ initialData, onSubmit, onBack }: NewCustomerFo
               />
               {errors.drivingExp && <p id="driving-exp-error" className="error-text">{errors.drivingExp}</p>}
               <p id="driving-exp-note" className="field-note">
-                Required. You need at least {MIN_DRIVING_EXP_YEARS} years of driving experience to book online.
+                {tf(t.newCustomer.drivingExpNote, { minYears: MIN_DRIVING_EXP_YEARS })}
               </p>
             </div>
           </CardContent>
@@ -333,13 +363,13 @@ export function NewCustomerForm({ initialData, onSubmit, onBack }: NewCustomerFo
 
         <Card className="portal-card rounded-[1.75rem]">
           <CardHeader>
-            <CardTitle className="text-xl">Location details</CardTitle>
-            <CardDescription>Where are you based?</CardDescription>
+            <CardTitle className="text-xl">{t.newCustomer.locationTitle}</CardTitle>
+            <CardDescription>{t.newCustomer.locationDesc}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="country">Country</Label>
+                <Label htmlFor="country">{t.newCustomer.country}</Label>
                 <Input
                   id="country"
                   type="text"
@@ -353,7 +383,7 @@ export function NewCustomerForm({ initialData, onSubmit, onBack }: NewCustomerFo
                 {errors.country && <p id="country-error" className="error-text">{errors.country}</p>}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="city">City</Label>
+                <Label htmlFor="city">{t.newCustomer.city}</Label>
                 <Input
                   id="city"
                   type="text"
@@ -369,16 +399,32 @@ export function NewCustomerForm({ initialData, onSubmit, onBack }: NewCustomerFo
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="address">Full Address</Label>
+              <Label htmlFor="flightNumber">{t.newCustomer.flightNumber}</Label>
+              <Input
+                id="flightNumber"
+                type="text"
+                placeholder={t.newCustomer.flightNumberPlaceholder}
+                value={formData.flightNumber ?? ""}
+                onChange={(e) => setFormData((prev) => ({ ...prev, flightNumber: e.target.value }))}
+                aria-describedby="flight-number-note"
+                className="h-12 rounded-xl"
+              />
+              <p id="flight-number-note" className="field-note">
+                {t.newCustomer.flightNumberNote}
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="address">{t.newCustomer.address}</Label>
               <Textarea
                 id="address"
-                placeholder="Building name, street name, area..."
+                placeholder={t.newCustomer.addressPlaceholder}
                 value={formData.address}
                 onChange={(e) => setFormData((prev) => ({ ...prev, address: e.target.value }))}
                 className="min-h-[110px] resize-none rounded-xl"
               />
               <p className="field-note">
-                Optional: Provide your full address for delivery purposes.
+                {t.newCustomer.addressNote}
               </p>
             </div>
           </CardContent>
@@ -388,26 +434,24 @@ export function NewCustomerForm({ initialData, onSubmit, onBack }: NewCustomerFo
           <div ref={eligibilityAlertRef}>
             <Alert variant="destructive" className="border-destructive/30 bg-destructive/5">
               <TriangleAlert className="h-5 w-5" />
-              <AlertTitle>Unable to continue online</AlertTitle>
+              <AlertTitle>{t.newCustomer.unableOnline}</AlertTitle>
               <AlertDescription className="space-y-4 text-destructive/90">
-                <p>{MSG_DRIVER_NOT_ELIGIBLE}</p>
+                <p>{t.newCustomer.notEligible}</p>
                 <div className="flex flex-col gap-2 sm:flex-row">
                   <Button asChild variant="outline" className="h-11 border-destructive/30 bg-background">
                     <a href={OWNER_PHONE_TEL}>
                       <Phone className="mr-2 h-4 w-4" />
-                      Call {OWNER_PHONE_DISPLAY}
+                      {tf(t.newCustomer.call, { phone: OWNER_PHONE_DISPLAY })}
                     </a>
                   </Button>
                   <Button asChild variant="outline" className="h-11 border-destructive/30 bg-background">
                     <a
-                      href={buildOwnerWhatsAppUrl(
-                        "Hi, I tried to book a rental online but I do not meet the age or driving experience requirements. Can we discuss my booking?"
-                      )}
+                      href={buildOwnerWhatsAppUrl(t.newCustomer.whatsappMessage)}
                       target="_blank"
                       rel="noopener noreferrer"
                     >
                       <MessageCircle className="mr-2 h-4 w-4" />
-                      WhatsApp owner
+                      {t.newCustomer.whatsappOwner}
                     </a>
                   </Button>
                 </div>
@@ -419,20 +463,53 @@ export function NewCustomerForm({ initialData, onSubmit, onBack }: NewCustomerFo
         <div className="flex flex-col gap-3 pt-4 sm:flex-row">
           <Button type="button" variant="outline" onClick={onBack} className="h-12 px-6">
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back
+            {t.common.back}
           </Button>
           <Button type="submit" disabled={isSubmitting} className="h-12 flex-1 px-8 sm:flex-none">
             {isSubmitting ? (
-              "Processing..."
+              t.common.processing
             ) : (
               <>
-                Continue
+                {t.common.continue}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </>
             )}
           </Button>
         </div>
       </form>
+
+      <Dialog open={existingProfileOpen} onOpenChange={setExistingProfileOpen}>
+        <DialogContent className="rounded-[1.75rem] sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-serif text-2xl">
+              {t.newCustomer.alreadyExistsTitle}
+            </DialogTitle>
+            <DialogDescription className="text-base leading-7">
+              {t.newCustomer.alreadyExistsBody}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:justify-start">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setExistingProfileOpen(false)}
+            >
+              {t.newCustomer.alreadyExistsClose}
+            </Button>
+            <Button
+              type="button"
+              onClick={() => {
+                const email = formData.email.trim().toLowerCase()
+                setExistingProfileOpen(false)
+                onSwitchToExisting(email)
+              }}
+            >
+              <UserCheck className="mr-2 h-4 w-4" />
+              {t.newCustomer.alreadyExistsAction}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label"
 import { ArrowLeft, ArrowRight } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { toast } from "@/hooks/use-toast"
-import { MSG_CUSTOMER_NOT_FOUND, MSG_VERIFY_FAILED } from "@/lib/portal-messages"
+import { useLanguage } from "@/components/i18n/language-provider"
 
 interface ExistingCustomerFormProps {
   initialData: CustomerInfo
@@ -18,6 +18,7 @@ interface ExistingCustomerFormProps {
 }
 
 export function ExistingCustomerForm({ initialData, onSubmit, onBack }: ExistingCustomerFormProps) {
+  const { t, tf } = useLanguage()
   const [formData, setFormData] = useState<CustomerInfo>(initialData)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -89,14 +90,14 @@ export function ExistingCustomerForm({ initialData, onSubmit, onBack }: Existing
     const newErrors: Record<string, string> = {}
 
     if (!formData.email) {
-      newErrors.email = "Email address is required"
+      newErrors.email = t.existing.emailRequired
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = "Please enter a valid email address"
+      newErrors.email = t.existing.emailInvalid
     }
 
     const nicValue = (formData.nicPassportNumber || "").trim()
     if (!nicValue) {
-      newErrors.nicPassportNumber = "NIC/Passport number is required"
+      newErrors.nicPassportNumber = t.existing.nicRequired
     }
 
     setErrors(newErrors)
@@ -119,22 +120,21 @@ export function ExistingCustomerForm({ initialData, onSubmit, onBack }: Existing
       setIsSubmitting(false)
 
       if (result.ok) {
-        toast({ title: "Customer validated please proceed" })
+        toast({ title: t.existing.validated })
         setTimeout(() => onSubmit({ ...payload, customerId: result.id }), 200)
       } else {
         setErrors((prev) => ({
           ...prev,
-          nicPassportNumber:
-            "These details don't match our records. Check your email and NIC/Passport.",
+          nicPassportNumber: t.existing.nicMismatch,
         }))
         setFormMessage({
           type: "error",
-          text: MSG_CUSTOMER_NOT_FOUND,
+          text: t.messages.customerNotFound,
         })
         toast({
           variant: "destructive",
-          title: "Details not recognised",
-          description: MSG_CUSTOMER_NOT_FOUND,
+          title: t.messages.detailsNotRecognised,
+          description: t.messages.customerNotFound,
         })
       }
     } catch (err) {
@@ -142,11 +142,11 @@ export function ExistingCustomerForm({ initialData, onSubmit, onBack }: Existing
       if (process.env.NODE_ENV === "development") {
         console.error(err)
       }
-      setFormMessage({ type: "error", text: MSG_VERIFY_FAILED })
+      setFormMessage({ type: "error", text: t.messages.verifyFailed })
       toast({
         variant: "destructive",
-        title: "Something went wrong",
-        description: MSG_VERIFY_FAILED,
+        title: t.messages.somethingWentWrong,
+        description: t.messages.verifyFailed,
       })
     }
   }
@@ -154,10 +154,10 @@ export function ExistingCustomerForm({ initialData, onSubmit, onBack }: Existing
   return (
     <div className="space-y-8">
       <div className="space-y-3">
-        <span className="section-kicker">Step 2</span>
-        <h2 className="text-3xl font-serif font-semibold sm:text-4xl">Welcome back</h2>
+        <span className="section-kicker">{tf(t.common.step, { n: 2 })}</span>
+        <h2 className="text-3xl font-serif font-semibold sm:text-4xl">{t.existing.title}</h2>
         <p className="max-w-2xl text-base leading-7 text-muted-foreground">
-          Please provide your email and enter your NIC/Passport number to continue.
+          {t.existing.intro}
         </p>
         {formMessage && (
           <p
@@ -177,12 +177,12 @@ export function ExistingCustomerForm({ initialData, onSubmit, onBack }: Existing
       <form onSubmit={handleSubmit} className="space-y-6">
         <Card className="portal-card rounded-[1.75rem]">
           <CardHeader>
-            <CardTitle className="text-xl">Account information</CardTitle>
-            <CardDescription>Enter your registered email address</CardDescription>
+            <CardTitle className="text-xl">{t.existing.accountTitle}</CardTitle>
+            <CardDescription>{t.existing.accountDesc}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email Address</Label>
+              <Label htmlFor="email">{t.existing.email}</Label>
               <Input
                 id="email"
                 type="email"
@@ -198,7 +198,7 @@ export function ExistingCustomerForm({ initialData, onSubmit, onBack }: Existing
               />
               {errors.email && <p id="existing-email-error" className="error-text">{errors.email}</p>}
               <p id="existing-email-note" className="field-note">
-                Use the email address associated with your account.
+                {t.existing.emailNote}
               </p>
             </div>
           </CardContent>
@@ -206,15 +206,15 @@ export function ExistingCustomerForm({ initialData, onSubmit, onBack }: Existing
 
         <Card className="portal-card rounded-[1.75rem]">
           <CardHeader>
-            <CardTitle className="text-xl">NIC/Passport number</CardTitle>
-            <CardDescription>Enter your NIC or Passport number used at registration</CardDescription>
+            <CardTitle className="text-xl">{t.existing.nicTitle}</CardTitle>
+            <CardDescription>{t.existing.nicDesc}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              <Label htmlFor="nicPassportNumber">NIC/Passport Number</Label>
+              <Label htmlFor="nicPassportNumber">{t.existing.nicLabel}</Label>
               <Input
                 id="nicPassportNumber"
-                placeholder="Enter your NIC or Passport number"
+                placeholder={t.existing.nicPlaceholder}
                 value={formData.nicPassportNumber || ""}
                 onChange={(e) =>
                   setFormData((prev) => ({ ...prev, nicPassportNumber: e.target.value }))
@@ -238,14 +238,14 @@ export function ExistingCustomerForm({ initialData, onSubmit, onBack }: Existing
         <div className="flex flex-col gap-3 pt-4 sm:flex-row">
           <Button type="button" variant="outline" onClick={onBack} className="h-12 px-6">
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back
+            {t.common.back}
           </Button>
           <Button type="submit" disabled={isSubmitting} className="h-12 flex-1 px-8 sm:flex-none">
             {isSubmitting ? (
-              "Processing..."
+              t.common.processing
             ) : (
               <>
-                Continue
+                {t.common.continue}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </>
             )}

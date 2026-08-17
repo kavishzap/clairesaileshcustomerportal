@@ -1,5 +1,8 @@
+"use client"
+
 import { cn } from "@/lib/utils"
 import { Check } from "lucide-react"
+import { useLanguage } from "@/components/i18n/language-provider"
 
 interface ProgressStepperProps {
   steps: string[]
@@ -7,12 +10,14 @@ interface ProgressStepperProps {
 }
 
 export function ProgressStepper({ steps, currentStep }: ProgressStepperProps) {
+  const { t, tf } = useLanguage()
+
   return (
-    <div className="w-full" aria-label="Progress">
+    <div className="w-full" aria-label={t.stepper.progress}>
       <div className="lg:hidden">
         <div className="mb-3 flex items-center justify-between gap-3">
           <span className="text-sm font-semibold text-foreground">
-            Step {currentStep} of {steps.length}
+            {tf(t.stepper.stepOf, { current: currentStep, total: steps.length })}
           </span>
           <span className="max-w-[14rem] truncate text-right text-sm text-muted-foreground">
             {steps[currentStep - 1]}
@@ -26,7 +31,7 @@ export function ProgressStepper({ steps, currentStep }: ProgressStepperProps) {
         </div>
       </div>
 
-      <ol className="hidden lg:flex items-center justify-between" aria-label="Portal steps">
+      <ol className="hidden lg:flex items-center justify-between" aria-label={t.stepper.portalSteps}>
         {steps.map((step, index) => {
           const stepNumber = index + 1
           const isCompleted = currentStep > stepNumber
@@ -34,7 +39,7 @@ export function ProgressStepper({ steps, currentStep }: ProgressStepperProps) {
           const isUpcoming = currentStep < stepNumber
 
           return (
-            <li key={step} className="flex items-center flex-1 last:flex-none">
+            <li key={`${stepNumber}-${step}`} className="flex items-center flex-1 last:flex-none">
               <div className="flex items-center gap-3">
                 <div
                   aria-current={isCurrent ? "step" : undefined}

@@ -8,17 +8,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Calendar, Check, CheckCircle2, Copy, CreditCard, Home, MapPin, MessageCircle } from "lucide-react"
 import { buildOwnerWhatsAppUrl } from "@/lib/portal-owner"
 import { getPaymentOptionLabel } from "@/lib/portal-payment-options"
-
-function buildContractOwnerWhatsAppUrl(contractNumber: string): string {
-  const text = `Hey - a rental contract request was submitted with all details filled in. Contract: ${contractNumber}. Please confirm and share vehicle / car information with the customer.`
-  return buildOwnerWhatsAppUrl(text)
-}
+import { useLanguage } from "@/components/i18n/language-provider"
+import { formatShortDate } from "@/lib/i18n/format"
 
 interface SuccessStepProps {
   contractDetails: ContractDetails
 }
 
 export function SuccessStep({ contractDetails }: SuccessStepProps) {
+  const { locale, t, tf } = useLanguage()
   const [copied, setCopied] = useState(false)
 
   const copyContractNumber = () => {
@@ -26,6 +24,10 @@ export function SuccessStep({ contractDetails }: SuccessStepProps) {
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
+
+  const whatsappUrl = buildOwnerWhatsAppUrl(
+    tf(t.success.whatsappMessage, { contractNumber: contractDetails.contractNumber })
+  )
 
   return (
     <div className="mx-auto max-w-3xl space-y-8">
@@ -38,13 +40,12 @@ export function SuccessStep({ contractDetails }: SuccessStepProps) {
         </div>
 
         <div className="mt-5 space-y-2">
-          <span className="section-kicker">Step 5</span>
+          <span className="section-kicker">{tf(t.common.step, { n: 5 })}</span>
           <h2 className="mt-4 text-3xl font-serif font-semibold sm:text-4xl">
-            Request submitted successfully
+            {t.success.title}
           </h2>
           <p className="mx-auto max-w-2xl text-base leading-7 text-muted-foreground">
-            Your rental contract request has been received. Keep the contract number handy while
-            the owner confirms the vehicle details.
+            {t.success.intro}
           </p>
         </div>
       </div>
@@ -53,7 +54,7 @@ export function SuccessStep({ contractDetails }: SuccessStepProps) {
         <CardContent className="p-6 sm:p-8">
           <div className="space-y-3 text-center">
             <p className="text-sm font-medium uppercase tracking-[0.18em] text-muted-foreground">
-              Your Contract Number
+              {t.success.contractNumber}
             </p>
             <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
               <p className="break-all text-3xl font-bold tracking-[0.18em] text-foreground sm:text-4xl">
@@ -63,29 +64,28 @@ export function SuccessStep({ contractDetails }: SuccessStepProps) {
                 variant="outline"
                 size="icon"
                 onClick={copyContractNumber}
-                aria-label="Copy contract number"
+                aria-label={t.success.copyAria}
               >
                 {copied ? <Check className="h-4 w-4 text-success" /> : <Copy className="h-4 w-4" />}
               </Button>
             </div>
-            <p className="field-note">Keep this number for your records.</p>
+            <p className="field-note">{t.success.keepNumber}</p>
 
             <div className="mt-6 rounded-[1.6rem] border border-success/25 bg-white/68 p-5 text-center">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-success-foreground">
-                Important - notify the owner
+                {t.success.notifyTitle}
               </p>
               <p className="mx-auto mt-3 max-w-xl text-sm leading-7 text-foreground/88">
-                Send a WhatsApp so the owner knows you submitted this request with complete
-                details. They can then assign a vehicle and share car information with you.
+                {t.success.notifyBody}
               </p>
               <Button asChild className="mt-5 h-12 w-full bg-[linear-gradient(145deg,#1f9a5c,#147444)] text-white hover:brightness-105">
                 <a
-                  href={buildContractOwnerWhatsAppUrl(contractDetails.contractNumber)}
+                  href={whatsappUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                 >
                   <MessageCircle className="mr-2 h-4 w-4" />
-                  Send WhatsApp to owner
+                  {t.success.sendWhatsapp}
                 </a>
               </Button>
             </div>
@@ -95,27 +95,27 @@ export function SuccessStep({ contractDetails }: SuccessStepProps) {
 
       <Card className="portal-card rounded-[1.75rem]">
         <CardHeader>
-          <CardTitle className="text-lg">Booking summary</CardTitle>
+          <CardTitle className="text-lg">{t.success.summary}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <SummaryItem
             icon={<Calendar className="h-4 w-4 text-foreground" />}
-            title="Rental period"
-            detail={`${formatDate(contractDetails.startDate)} to ${formatDate(contractDetails.endDate)}`}
-            caption={`${contractDetails.numberOfDays} ${contractDetails.numberOfDays === 1 ? "Day" : "Days"}`}
+            title={t.success.rentalPeriod}
+            detail={`${formatShortDate(contractDetails.startDate, locale)} ${t.common.to} ${formatShortDate(contractDetails.endDate, locale)}`}
+            caption={`${contractDetails.numberOfDays} ${contractDetails.numberOfDays === 1 ? t.common.day : t.common.days}`}
           />
           <SummaryItem
             icon={<MapPin className="h-4 w-4 text-foreground" />}
-            title="Locations"
-            detail={`Delivery: ${contractDetails.deliveryPlace}`}
-            caption={`Recovery: ${contractDetails.recoveryPlace}`}
+            title={t.success.locations}
+            detail={tf(t.success.delivery, { place: contractDetails.deliveryPlace })}
+            caption={tf(t.success.recovery, { place: contractDetails.recoveryPlace })}
           />
           {contractDetails.paymentMode ? (
             <SummaryItem
               icon={<CreditCard className="h-4 w-4 text-foreground" />}
-              title="Payment option"
-              detail={getPaymentOptionLabel(contractDetails.paymentMode)}
-              caption="Selected payment method"
+              title={t.success.paymentOption}
+              detail={getPaymentOptionLabel(contractDetails.paymentMode, t.payment)}
+              caption={t.success.selectedPayment}
             />
           ) : null}
         </CardContent>
@@ -124,13 +124,13 @@ export function SuccessStep({ contractDetails }: SuccessStepProps) {
       <div className="flex justify-center pt-2">
         <Button variant="outline" onClick={() => (window.location.href = "/")} className="h-12 w-full max-w-md px-6">
           <Home className="mr-2 h-4 w-4" />
-          Back to Portal
+          {t.success.backToPortal}
         </Button>
       </div>
 
       <div className="text-center">
         <p className="text-xs text-muted-foreground">
-          Questions? Contact us at{" "}
+          {t.success.questions}{" "}
           <a href="mailto:support@clairesailesh.com" className="font-semibold text-primary hover:underline">
             support@clairesailesh.com
           </a>
@@ -163,14 +163,4 @@ function SummaryItem({
       </div>
     </div>
   )
-}
-
-function formatDate(dateString: string): string {
-  if (!dateString) return ""
-  const date = new Date(dateString)
-  return date.toLocaleDateString("en-GB", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  })
 }

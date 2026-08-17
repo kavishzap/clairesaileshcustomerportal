@@ -3,12 +3,14 @@ import { Manrope, Fraunces } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 import { Toaster } from '@/components/ui/toaster'
+import { LanguageProvider } from '@/components/i18n/language-provider'
+import { SkipLink } from '@/components/i18n/skip-link'
 
 const manrope = Manrope({ subsets: ['latin'], variable: '--font-manrope' })
 const fraunces = Fraunces({ subsets: ['latin'], variable: '--font-fraunces' })
 
 export const metadata: Metadata = {
-  title: 'Claire Sailesh Car Rental Portal',
+  title: 'Claire & Sailesh Car Rental Portal',
   description: 'Create your rental contract request in a clear, guided experience.',
   generator: 'v0.app',
   icons: {
@@ -36,17 +38,14 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body className={`${manrope.variable} ${fraunces.variable} font-sans antialiased`}>
-        <a
-          href="#main-content"
-          className="skip-link"
-        >
-          Skip to main content
-        </a>
-        {children}
-        <Toaster />
-        <Analytics />
+        <LanguageProvider>
+          <SkipLink />
+          {children}
+          <Toaster />
+          <Analytics />
+        </LanguageProvider>
       </body>
     </html>
   )

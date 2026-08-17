@@ -17,6 +17,7 @@ import {
 import { PAYMENT_OPTIONS } from "@/lib/portal-payment-options"
 import { ArrowLeft, ArrowRight, Calendar, Clock, CreditCard, MapPin } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useLanguage } from "@/components/i18n/language-provider"
 
 interface ContractDetailsFormProps {
   initialData: ContractDetails
@@ -25,6 +26,7 @@ interface ContractDetailsFormProps {
 }
 
 export function ContractDetailsForm({ initialData, onSubmit, onBack }: ContractDetailsFormProps) {
+  const { t, tf } = useLanguage()
   const [formData, setFormData] = useState<ContractDetails>(initialData)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -42,16 +44,16 @@ export function ContractDetailsForm({ initialData, onSubmit, onBack }: ContractD
   const validateForm = () => {
     const newErrors: Record<string, string> = {}
 
-    if (!formData.startDate) newErrors.startDate = "Start date is required"
-    if (!formData.endDate) newErrors.endDate = "End date is required"
+    if (!formData.startDate) newErrors.startDate = t.contract.startDateRequired
+    if (!formData.endDate) newErrors.endDate = t.contract.endDateRequired
     if (formData.startDate && formData.endDate && new Date(formData.endDate) <= new Date(formData.startDate)) {
-      newErrors.endDate = "End date must be after start date"
+      newErrors.endDate = t.contract.endDateAfter
     }
-    if (!formData.deliveryTime) newErrors.deliveryTime = "Delivery time is required"
-    if (!formData.recoveryTime) newErrors.recoveryTime = "Recovery time is required"
-    if (!(formData.deliveryPlace || "").trim()) newErrors.deliveryPlace = "Delivery location is required"
-    if (!(formData.recoveryPlace || "").trim()) newErrors.recoveryPlace = "Recovery location is required"
-    if (!formData.paymentMode) newErrors.paymentMode = "Please select a payment option"
+    if (!formData.deliveryTime) newErrors.deliveryTime = t.contract.deliveryTimeRequired
+    if (!formData.recoveryTime) newErrors.recoveryTime = t.contract.recoveryTimeRequired
+    if (!(formData.deliveryPlace || "").trim()) newErrors.deliveryPlace = t.contract.deliveryLocationRequired
+    if (!(formData.recoveryPlace || "").trim()) newErrors.recoveryPlace = t.contract.recoveryLocationRequired
+    if (!formData.paymentMode) newErrors.paymentMode = t.contract.paymentRequired
 
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
@@ -75,10 +77,10 @@ export function ContractDetailsForm({ initialData, onSubmit, onBack }: ContractD
   return (
     <div className="space-y-8">
       <div className="space-y-3">
-        <span className="section-kicker">Step 3</span>
-        <h2 className="text-3xl font-serif font-semibold sm:text-4xl">Contract details</h2>
+        <span className="section-kicker">{tf(t.common.step, { n: 3 })}</span>
+        <h2 className="text-3xl font-serif font-semibold sm:text-4xl">{t.contract.title}</h2>
         <p className="max-w-2xl text-base leading-7 text-muted-foreground">
-          Configure the specifics of your rental contract.
+          {t.contract.intro}
         </p>
       </div>
 
@@ -87,17 +89,17 @@ export function ContractDetailsForm({ initialData, onSubmit, onBack }: ContractD
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-xl">
               <Calendar className="h-5 w-5" />
-              Rental period
+              {t.contract.rentalPeriod}
             </CardTitle>
-            <CardDescription>Select the start and end dates for your rental</CardDescription>
+            <CardDescription>{t.contract.rentalPeriodDesc}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="rounded-[1.25rem] border border-border/60 bg-white/45 p-4">
               <div className="space-y-3">
                 <div>
-                  <Label className="text-sm font-semibold text-foreground">Rental period mode</Label>
+                  <Label className="text-sm font-semibold text-foreground">{t.contract.periodMode}</Label>
                   <p className="field-note mt-1">
-                    Choose whether the end date is counted as inclusive or exclusive.
+                    {t.contract.periodModeHint}
                   </p>
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2">
@@ -107,11 +109,11 @@ export function ContractDetailsForm({ initialData, onSubmit, onBack }: ContractD
                       onCheckedChange={() =>
                         setFormData((prev) => ({ ...prev, rentalPeriodMode: "inclusive" }))
                       }
-                      aria-label="Inclusive rental period"
+                      aria-label={t.contract.inclusiveAria}
                     />
                     <div>
-                      <span className="text-sm font-semibold text-foreground">Inclusive</span>
-                      <p className="field-note">Counts both the start and end date.</p>
+                      <span className="text-sm font-semibold text-foreground">{t.contract.inclusive}</span>
+                      <p className="field-note">{t.contract.inclusiveHint}</p>
                     </div>
                   </label>
                   <label className="flex cursor-pointer items-start gap-3 rounded-[1rem] border border-border/60 bg-background/70 p-3">
@@ -120,11 +122,11 @@ export function ContractDetailsForm({ initialData, onSubmit, onBack }: ContractD
                       onCheckedChange={() =>
                         setFormData((prev) => ({ ...prev, rentalPeriodMode: "exclusive" }))
                       }
-                      aria-label="Exclusive rental period"
+                      aria-label={t.contract.exclusiveAria}
                     />
                     <div>
-                      <span className="text-sm font-semibold text-foreground">Exclusive</span>
-                      <p className="field-note">Counts up to, but not including, the end date.</p>
+                      <span className="text-sm font-semibold text-foreground">{t.contract.exclusive}</span>
+                      <p className="field-note">{t.contract.exclusiveHint}</p>
                     </div>
                   </label>
                 </div>
@@ -133,7 +135,7 @@ export function ContractDetailsForm({ initialData, onSubmit, onBack }: ContractD
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="startDate">Start Date</Label>
+                <Label htmlFor="startDate">{t.contract.startDate}</Label>
                 <Input
                   id="startDate"
                   type="date"
@@ -146,7 +148,7 @@ export function ContractDetailsForm({ initialData, onSubmit, onBack }: ContractD
                 {errors.startDate && <p id="start-date-error" className="error-text">{errors.startDate}</p>}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="endDate">End Date</Label>
+                <Label htmlFor="endDate">{t.contract.endDate}</Label>
                 <Input
                   id="endDate"
                   type="date"
@@ -163,13 +165,18 @@ export function ContractDetailsForm({ initialData, onSubmit, onBack }: ContractD
             {formData.numberOfDays > 0 && (
               <div className="rounded-[1.4rem] border border-primary/10 bg-[linear-gradient(135deg,color-mix(in_oklch,var(--secondary)_55%,white),color-mix(in_oklch,var(--accent)_35%,white))] p-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Total duration</span>
+                  <span className="text-sm text-muted-foreground">{t.contract.totalDuration}</span>
                   <span className="text-lg font-semibold">
-                    {formData.numberOfDays} {formData.numberOfDays === 1 ? "Day" : "Days"}
+                    {formData.numberOfDays} {formData.numberOfDays === 1 ? t.common.day : t.common.days}
                   </span>
                 </div>
-                <p className="field-note mt-2 capitalize">
-                  {formData.rentalPeriodMode} calculation
+                <p className="field-note mt-2">
+                  {tf(t.contract.calculation, {
+                    mode:
+                      formData.rentalPeriodMode === "inclusive"
+                        ? t.contract.inclusive
+                        : t.contract.exclusive,
+                  })}
                 </p>
               </div>
             )}
@@ -178,7 +185,7 @@ export function ContractDetailsForm({ initialData, onSubmit, onBack }: ContractD
               <div className="space-y-2">
                 <Label htmlFor="deliveryTime" className="flex items-center gap-2">
                   <Clock className="h-4 w-4 text-muted-foreground" />
-                  Delivery Time
+                  {t.contract.deliveryTime}
                 </Label>
                 <Input
                   id="deliveryTime"
@@ -190,12 +197,12 @@ export function ContractDetailsForm({ initialData, onSubmit, onBack }: ContractD
                   className={cn("h-12 rounded-xl", errors.deliveryTime && "border-destructive focus-visible:ring-destructive")}
                 />
                 {errors.deliveryTime && <p id="delivery-time-error" className="error-text">{errors.deliveryTime}</p>}
-                <p id="delivery-time-note" className="field-note">When should we deliver the vehicle?</p>
+                <p id="delivery-time-note" className="field-note">{t.contract.deliveryTimeNote}</p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="recoveryTime" className="flex items-center gap-2">
                   <Clock className="h-4 w-4 text-muted-foreground" />
-                  Recovery Time
+                  {t.contract.recoveryTime}
                 </Label>
                 <Input
                   id="recoveryTime"
@@ -207,7 +214,7 @@ export function ContractDetailsForm({ initialData, onSubmit, onBack }: ContractD
                   className={cn("h-12 rounded-xl", errors.recoveryTime && "border-destructive focus-visible:ring-destructive")}
                 />
                 {errors.recoveryTime && <p id="recovery-time-error" className="error-text">{errors.recoveryTime}</p>}
-                <p id="recovery-time-note" className="field-note">When should we collect the vehicle?</p>
+                <p id="recovery-time-note" className="field-note">{t.contract.recoveryTimeNote}</p>
               </div>
             </div>
 
@@ -215,7 +222,7 @@ export function ContractDetailsForm({ initialData, onSubmit, onBack }: ContractD
               <div className="space-y-2">
                 <Label htmlFor="deliveryPlace" className="flex items-center gap-2">
                   <MapPin className="h-4 w-4 text-muted-foreground" />
-                  Delivery Location
+                  {t.contract.deliveryLocation}
                 </Label>
                 <Input
                   id="deliveryPlace"
@@ -232,7 +239,7 @@ export function ContractDetailsForm({ initialData, onSubmit, onBack }: ContractD
               <div className="space-y-2">
                 <Label htmlFor="recoveryPlace" className="flex items-center gap-2">
                   <MapPin className="h-4 w-4 text-muted-foreground" />
-                  Recovery Location
+                  {t.contract.recoveryLocation}
                 </Label>
                 <Input
                   id="recoveryPlace"
@@ -254,12 +261,12 @@ export function ContractDetailsForm({ initialData, onSubmit, onBack }: ContractD
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-xl">
               <CreditCard className="h-5 w-5" />
-              Payment option
+              {t.contract.paymentTitle}
             </CardTitle>
-            <CardDescription>How would you like to pay for this rental?</CardDescription>
+            <CardDescription>{t.contract.paymentDesc}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">
-            <Label htmlFor="paymentMode">Payment method</Label>
+            <Label htmlFor="paymentMode">{t.contract.paymentMethod}</Label>
             <Select
               value={formData.paymentMode || undefined}
               onValueChange={(value) =>
@@ -278,12 +285,12 @@ export function ContractDetailsForm({ initialData, onSubmit, onBack }: ContractD
                   errors.paymentMode && "border-destructive focus-visible:ring-destructive"
                 )}
               >
-                <SelectValue placeholder="Select payment option" />
+                <SelectValue placeholder={t.contract.paymentPlaceholder} />
               </SelectTrigger>
               <SelectContent className="rounded-xl">
                 {PAYMENT_OPTIONS.map((option) => (
                   <SelectItem key={option.value} value={option.value}>
-                    {option.label}
+                    {t.payment[option.value]}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -294,7 +301,7 @@ export function ContractDetailsForm({ initialData, onSubmit, onBack }: ContractD
               </p>
             )}
             <p id="payment-mode-note" className="field-note">
-              Choose how you plan to settle the rental payment.
+              {t.contract.paymentNote}
             </p>
           </CardContent>
         </Card>
@@ -302,14 +309,14 @@ export function ContractDetailsForm({ initialData, onSubmit, onBack }: ContractD
         <div className="flex flex-col gap-3 pt-4 sm:flex-row">
           <Button type="button" variant="outline" onClick={onBack} className="h-12 px-6">
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back
+            {t.common.back}
           </Button>
           <Button type="submit" disabled={isSubmitting} className="h-12 flex-1 px-8 sm:flex-none">
             {isSubmitting ? (
-              "Processing..."
+              t.common.processing
             ) : (
               <>
-                Continue to Review
+                {t.common.continueToReview}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </>
             )}

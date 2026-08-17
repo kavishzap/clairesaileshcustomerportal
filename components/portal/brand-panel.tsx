@@ -22,7 +22,7 @@ export function BrandPanel({ className }: BrandPanelProps) {
       <div className="relative flex h-full flex-col gap-8">
         <div className="space-y-5">
           <span className="inline-flex w-fit items-center rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-white/88">
-            Claire Sailesh
+            Claire &amp; Sailesh
           </span>
           <div className="space-y-4">
             <h1 className="font-serif text-3xl font-semibold leading-tight sm:text-4xl">

@@ -7,9 +7,10 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { toast } from "@/hooks/use-toast"
-import { MSG_CONTRACT_SUBMIT_FAILED } from "@/lib/portal-messages"
 import { getPaymentOptionLabel } from "@/lib/portal-payment-options"
 import { ArrowLeft, Calendar, Check, Clock, CreditCard, Info, MapPin, User } from "lucide-react"
+import { useLanguage } from "@/components/i18n/language-provider"
+import { formatLongDate, formatTime } from "@/lib/i18n/format"
 
 interface ReviewStepProps {
   customerType: CustomerType
@@ -26,6 +27,7 @@ export function ReviewStep({
   onConfirm,
   onBack,
 }: ReviewStepProps) {
+  const { locale, t, tf } = useLanguage()
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleConfirm = async () => {
@@ -36,10 +38,10 @@ export function ReviewStep({
       if (process.env.NODE_ENV === "development") {
         console.error(err)
       }
-      const description = err instanceof Error ? err.message : MSG_CONTRACT_SUBMIT_FAILED
+      const description = err instanceof Error ? err.message : t.messages.contractSubmitFailed
       toast({
         variant: "destructive",
-        title: "Something went wrong",
+        title: t.messages.somethingWentWrong,
         description,
       })
     } finally {
@@ -50,10 +52,10 @@ export function ReviewStep({
   return (
     <div className="space-y-8">
       <div className="space-y-3">
-        <span className="section-kicker">Step 4</span>
-        <h2 className="text-3xl font-serif font-semibold sm:text-4xl">Review your request</h2>
+        <span className="section-kicker">{tf(t.common.step, { n: 4 })}</span>
+        <h2 className="text-3xl font-serif font-semibold sm:text-4xl">{t.review.title}</h2>
         <p className="max-w-2xl text-base leading-7 text-muted-foreground">
-          Review the customer and contract details before you confirm the request.
+          {t.review.intro}
         </p>
       </div>
 
@@ -62,37 +64,40 @@ export function ReviewStep({
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
               <User className="h-5 w-5" />
-              Customer information
+              {t.review.customerInfo}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             {customerType === "new" ? (
               <>
-                <ReviewRow label="Full Name" value={`${customerInfo.firstName} ${customerInfo.lastName}`} />
-                <ReviewRow label="Email" value={customerInfo.email} />
-                <ReviewRow label="Phone" value={customerInfo.phone || "Not provided"} />
-                <ReviewRow label="NIC / Passport" value={customerInfo.nicLicence || "Not provided"} />
+                <ReviewRow label={t.review.fullName} value={`${customerInfo.firstName} ${customerInfo.lastName}`} />
+                <ReviewRow label={t.review.email} value={customerInfo.email} />
+                <ReviewRow label={t.review.phone} value={customerInfo.phone || t.common.notProvided} />
+                <ReviewRow label={t.review.nic} value={customerInfo.nicLicence || t.common.notProvided} />
                 {customerInfo.age?.trim() ? (
-                  <ReviewRow label="Age" value={customerInfo.age.trim()} />
+                  <ReviewRow label={t.review.age} value={customerInfo.age.trim()} />
                 ) : null}
                 {customerInfo.drivingLicenceNumber?.trim() ? (
-                  <ReviewRow label="Driving licence number" value={customerInfo.drivingLicenceNumber.trim()} />
+                  <ReviewRow label={t.review.drivingLicenceNumber} value={customerInfo.drivingLicenceNumber.trim()} />
                 ) : null}
                 {customerInfo.drivingExp?.trim() ? (
                   <ReviewRow
-                    label="Years of driving experience"
-                    value={`${customerInfo.drivingExp.trim()} ${Number(customerInfo.drivingExp) === 1 ? "year" : "years"}`}
+                    label={t.review.drivingExp}
+                    value={`${customerInfo.drivingExp.trim()} ${Number(customerInfo.drivingExp) === 1 ? t.common.year : t.common.years}`}
                   />
                 ) : null}
-                <ReviewRow label="Location" value={`${customerInfo.city}, ${customerInfo.country}`} />
-                {customerInfo.address ? <ReviewRow label="Address" value={customerInfo.address} /> : null}
+                <ReviewRow label={t.review.location} value={`${customerInfo.city}, ${customerInfo.country}`} />
+                {customerInfo.flightNumber?.trim() ? (
+                  <ReviewRow label={t.review.flightNumber} value={customerInfo.flightNumber.trim()} />
+                ) : null}
+                {customerInfo.address ? <ReviewRow label={t.review.address} value={customerInfo.address} /> : null}
               </>
             ) : (
               <>
-                <ReviewRow label="Email" value={customerInfo.email} />
-                <ReviewRow label="Customer Type" value="Existing customer" />
+                <ReviewRow label={t.review.email} value={customerInfo.email} />
+                <ReviewRow label={t.review.customerType} value={t.review.existingCustomer} />
                 {customerInfo.nicPassportNumber ? (
-                  <ReviewRow label="NIC/Passport Number" value={customerInfo.nicPassportNumber} />
+                  <ReviewRow label={t.review.nicNumber} value={customerInfo.nicPassportNumber} />
                 ) : null}
               </>
             )}
@@ -103,23 +108,33 @@ export function ReviewStep({
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
               <Calendar className="h-5 w-5" />
-              Contract details
+              {t.review.contractDetails}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <ReviewRow label="Rental Period" value={`${formatDate(contractDetails.startDate)} to ${formatDate(contractDetails.endDate)}`} />
             <ReviewRow
-              label="Period mode"
-              value={contractDetails.rentalPeriodMode === "inclusive" ? "Inclusive" : "Exclusive"}
+              label={t.review.rentalPeriod}
+              value={`${formatLongDate(contractDetails.startDate, locale)} ${t.common.to} ${formatLongDate(contractDetails.endDate, locale)}`}
             />
-            <ReviewRow label="Duration" value={`${contractDetails.numberOfDays} ${contractDetails.numberOfDays === 1 ? "Day" : "Days"}`} />
-            <ReviewRow label="Delivery Time" value={formatTime(contractDetails.deliveryTime)} icon={<Clock className="h-4 w-4" />} />
-            <ReviewRow label="Recovery Time" value={formatTime(contractDetails.recoveryTime)} icon={<Clock className="h-4 w-4" />} />
-            <ReviewRow label="Delivery Location" value={contractDetails.deliveryPlace} icon={<MapPin className="h-4 w-4" />} />
-            <ReviewRow label="Recovery Location" value={contractDetails.recoveryPlace} icon={<MapPin className="h-4 w-4" />} />
             <ReviewRow
-              label="Payment option"
-              value={contractDetails.paymentMode ? getPaymentOptionLabel(contractDetails.paymentMode) : "Not selected"}
+              label={t.review.periodMode}
+              value={contractDetails.rentalPeriodMode === "inclusive" ? t.contract.inclusive : t.contract.exclusive}
+            />
+            <ReviewRow
+              label={t.review.duration}
+              value={`${contractDetails.numberOfDays} ${contractDetails.numberOfDays === 1 ? t.common.day : t.common.days}`}
+            />
+            <ReviewRow label={t.review.deliveryTime} value={formatTime(contractDetails.deliveryTime, locale)} icon={<Clock className="h-4 w-4" />} />
+            <ReviewRow label={t.review.recoveryTime} value={formatTime(contractDetails.recoveryTime, locale)} icon={<Clock className="h-4 w-4" />} />
+            <ReviewRow label={t.review.deliveryLocation} value={contractDetails.deliveryPlace} icon={<MapPin className="h-4 w-4" />} />
+            <ReviewRow label={t.review.recoveryLocation} value={contractDetails.recoveryPlace} icon={<MapPin className="h-4 w-4" />} />
+            <ReviewRow
+              label={t.review.paymentOption}
+              value={
+                contractDetails.paymentMode
+                  ? getPaymentOptionLabel(contractDetails.paymentMode, t.payment)
+                  : t.common.notSelected
+              }
               icon={<CreditCard className="h-4 w-4" />}
             />
           </CardContent>
@@ -129,26 +144,25 @@ export function ReviewStep({
       <Alert className="border-primary/15 bg-[linear-gradient(135deg,color-mix(in_oklch,var(--secondary)_25%,white),color-mix(in_oklch,var(--accent)_18%,white))] text-foreground">
         <Info className="h-5 w-5 text-primary" />
         <AlertDescription className="text-foreground/88">
-          This request will be saved and shared with the owner on WhatsApp, and proper car
-          information will be shared with you as well.
+          {t.review.notice}
         </AlertDescription>
       </Alert>
 
       <div className="flex flex-col gap-3 pt-4 sm:flex-row">
         <Button type="button" variant="outline" onClick={onBack} disabled={isSubmitting} className="h-12 px-6">
           <ArrowLeft className="mr-2 h-4 w-4" />
-          Back
+          {t.common.back}
         </Button>
         <Button onClick={handleConfirm} disabled={isSubmitting} className="h-12 flex-1 px-8 sm:flex-none">
           {isSubmitting ? (
             <span className="flex items-center gap-2">
               <span className="h-4 w-4 rounded-full border-2 border-primary-foreground/30 border-t-primary-foreground animate-spin" />
-              Submitting...
+              {t.common.submitting}
             </span>
           ) : (
             <>
               <Check className="mr-2 h-4 w-4" />
-              Confirm Request
+              {t.review.confirm}
             </>
           )}
         </Button>
@@ -175,24 +189,4 @@ function ReviewRow({
       <span className="text-sm font-semibold text-foreground sm:max-w-[52%] sm:text-right">{value}</span>
     </div>
   )
-}
-
-function formatDate(dateString: string): string {
-  if (!dateString) return ""
-  const date = new Date(dateString)
-  return date.toLocaleDateString("en-GB", {
-    weekday: "short",
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  })
-}
-
-function formatTime(timeString: string): string {
-  if (!timeString) return ""
-  const [hours, minutes] = timeString.split(":")
-  const hour = parseInt(hours, 10)
-  const ampm = hour >= 12 ? "PM" : "AM"
-  const hour12 = hour % 12 || 12
-  return `${hour12}:${minutes} ${ampm}`
 }

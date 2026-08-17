@@ -28,11 +28,14 @@ export async function POST(request: Request) {
 
   const result = await createCustomerRow(url, key, info)
   if ("error" in result) {
+    if (result.code === "PROFILE_EXISTS") {
+      return NextResponse.json({ code: "PROFILE_EXISTS" }, { status: 409 })
+    }
     return NextResponse.json(
       {
         error: result.error,
         hint:
-          "Ensure INSERT is allowed on public.customers (RLS policy or SUPABASE_SERVICE_ROLE_KEY). Columns: first_name, last_name, email, phone, nic_or_passport; optional address, city, country, age, license, driving_exp.",
+          "Ensure INSERT is allowed on public.customers (RLS policy or SUPABASE_SERVICE_ROLE_KEY). Columns: first_name, last_name, email, phone, nic_or_passport; optional address, city, country, flight_number, age, license, driving_exp.",
       },
       { status: 400 }
     )

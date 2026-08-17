@@ -1,10 +1,10 @@
 "use client"
 
-import { useState } from "react"
-import {
-  MSG_CONTRACT_SUBMIT_FAILED,
-} from "@/lib/portal-messages"
+import { useEffect, useRef, useState } from "react"
 import { ProgressStepper } from "@/components/portal/progress-stepper"
+import { LanguageSwitcher } from "@/components/portal/language-switcher"
+import { StepTransitionOverlay } from "@/components/portal/step-transition"
+import { useLanguage } from "@/components/i18n/language-provider"
 import { CustomerTypeStep } from "@/components/portal/customer-type-step"
 import { ExistingCustomerForm } from "@/components/portal/existing-customer-form"
 import { NewCustomerForm } from "@/components/portal/new-customer-form"
@@ -24,6 +24,8 @@ export interface CustomerInfo {
   city?: string
   country?: string
   address?: string
+  /** Maps to `customers.flight_number`. */
+  flightNumber?: string
   nicPassportNumber?: string
   /** Maps to `customers.age`. */
   age?: string
@@ -52,6 +54,7 @@ export interface ContractDetails {
 }
 
 export default function CustomerPortal() {
+  const { t } = useLanguage()
   const [currentStep, setCurrentStep] = useState(1)
   const [customerType, setCustomerType] = useState<CustomerType>(null)
   const [customerInfo, setCustomerInfo] = useState<CustomerInfo>(() => ({
@@ -63,6 +66,7 @@ export default function CustomerPortal() {
     city: "",
     country: "",
     address: "",
+    flightNumber: "",
     nicPassportNumber: "",
     age: "",
     drivingLicenceNumber: "",
@@ -83,8 +87,16 @@ export default function CustomerPortal() {
     contractNumber: `CS-2026-${String(Math.floor(Math.random() * 900000) + 100000).slice(0, 6)}`,
     paymentMode: "",
   })
+  const previousStepRef = useRef(currentStep)
+  const [transitionOpen, setTransitionOpen] = useState(false)
 
-  const steps = ["Customer Type", "Customer Info", "Contract Details", "Review", "Success"]
+  const steps = [
+    t.stepper.customerType,
+    t.stepper.customerInfo,
+    t.stepper.contractDetails,
+    t.stepper.review,
+    t.stepper.success,
+  ]
 
   const emptyCustomerInfo = (): CustomerInfo => ({
     email: "",
@@ -95,6 +107,7 @@ export default function CustomerPortal() {
     city: "",
     country: "",
     address: "",
+    flightNumber: "",
     nicPassportNumber: "",
     age: "",
     drivingLicenceNumber: "",
@@ -123,8 +136,8 @@ export default function CustomerPortal() {
     if (!id) {
       throw new Error(
         customerType === "new"
-          ? "Customer id is missing. Go back to Customer Info and complete registration (Continue) before confirming."
-          : "Customer id is missing. Go back and verify your email and NIC/Passport again."
+          ? t.messages.customerIdMissingNew
+          : t.messages.customerIdMissingExisting
       )
     }
     const res = await fetch("/api/portal/contracts", {
@@ -145,7 +158,7 @@ export default function CustomerPortal() {
       if (process.env.NODE_ENV === "development") {
         console.error("Contract API error:", res.status, data)
       }
-      throw new Error(MSG_CONTRACT_SUBMIT_FAILED)
+      throw new Error(t.messages.contractSubmitFailed)
     }
     if (data.contract_number) {
       setContractDetails((prev) => ({ ...prev, contractNumber: String(data.contract_number) }))
@@ -153,10 +166,55 @@ export default function CustomerPortal() {
     setCurrentStep(5)
   }
 
-  const handleBack = () => {
-    if (currentStep > 1) {
-      setCurrentStep(currentStep - 1)
+  const scrollToPageTop = () => {
+    const html = document.documentElement
+    const previousBehavior = html.style.scrollBehavior
+    html.style.scrollBehavior = "auto"
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" })
+    html.scrollTop = 0
+    document.body.scrollTop = 0
+    html.style.scrollBehavior = previousBehavior
+  }
+
+  useEffect(() => {
+    const previousStep = previousStepRef.current
+    previousStepRef.current = currentStep
+    scrollToPageTop()
+    const frame = window.requestAnimationFrame(scrollToPageTop)
+    const timeout = window.setTimeout(scrollToPageTop, 50)
+    if (currentStep > previousStep) {
+      setTransitionOpen(true)
     }
+    return () => {
+      window.cancelAnimationFrame(frame)
+      window.clearTimeout(timeout)
+    }
+  }, [currentStep])
+
+  useEffect(() => {
+    if (!transitionOpen) return
+    const timer = window.setTimeout(() => setTransitionOpen(false), 1700)
+    return () => window.clearTimeout(timer)
+  }, [transitionOpen, currentStep])
+
+  const handleBack = () => {
+    if (currentStep <= 1) return
+    const profileCreated = Boolean(customerInfo.customerId?.trim())
+    if (profileCreated && currentStep >= 3) {
+      setCustomerType(null)
+      setCurrentStep(1)
+      return
+    }
+    setCurrentStep(currentStep - 1)
+  }
+
+  const handleSwitchToExisting = (email: string) => {
+    setCustomerType("existing")
+    setCustomerInfo({
+      ...emptyCustomerInfo(),
+      email: email.trim().toLowerCase(),
+    })
+    setCurrentStep(2)
   }
 
   const renderStep = () => {
@@ -166,6 +224,7 @@ export default function CustomerPortal() {
       case 2:
         return customerType === "existing" ? (
           <ExistingCustomerForm
+            key={`existing-${customerInfo.email || "blank"}`}
             initialData={customerInfo}
             onSubmit={handleCustomerInfoSubmit}
             onBack={handleBack}
@@ -175,6 +234,7 @@ export default function CustomerPortal() {
             initialData={customerInfo}
             onSubmit={handleCustomerInfoSubmit}
             onBack={handleBack}
+            onSwitchToExisting={handleSwitchToExisting}
           />
         )
       case 3:
@@ -206,14 +266,22 @@ export default function CustomerPortal() {
 
   return (
     <div className="min-h-screen">
+      <StepTransitionOverlay
+        open={transitionOpen}
+        stepName={steps[currentStep - 1] ?? ""}
+        onDismiss={() => setTransitionOpen(false)}
+      />
       <main id="main-content" className="portal-shell">
         <section className="mx-auto max-w-5xl space-y-5">
           <div className="portal-panel overflow-hidden">
             <div className="sticky top-3 z-10 border-b border-border/70 bg-background/65 px-4 py-4 backdrop-blur-sm sm:px-5 lg:px-6">
               <div className="mb-3">
-                <p className="section-kicker">Rental request</p>
-                <h1 className="mt-3 font-serif text-2xl font-semibold text-foreground sm:text-3xl">
-                  Customer portal
+                <div className="flex flex-wrap items-center gap-3">
+                  <p className="section-kicker">{t.header.rentalRequest}</p>
+                  <LanguageSwitcher />
+                </div>
+                <h1 className="mt-3 break-words font-serif text-2xl font-semibold leading-snug text-foreground sm:text-3xl">
+                  {t.header.welcome}
                 </h1>
               </div>
               <ProgressStepper steps={steps} currentStep={currentStep} />

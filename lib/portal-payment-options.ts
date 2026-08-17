@@ -7,7 +7,11 @@ export const PAYMENT_OPTIONS = [
 
 export type PaymentOption = (typeof PAYMENT_OPTIONS)[number]["value"]
 
-export function getPaymentOptionLabel(value: PaymentOption | string): string {
+export function getPaymentOptionLabel(
+  value: PaymentOption | string,
+  labels?: Record<PaymentOption, string>
+): string {
+  if (labels && isPaymentOption(value)) return labels[value]
   return PAYMENT_OPTIONS.find((option) => option.value === value)?.label ?? value
 }
 

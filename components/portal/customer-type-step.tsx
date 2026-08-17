@@ -4,45 +4,49 @@ import { CustomerType } from "@/app/page"
 import { Card, CardContent } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 import { ArrowRight, UserCheck, UserPlus } from "lucide-react"
+import { useLanguage } from "@/components/i18n/language-provider"
 
 interface CustomerTypeStepProps {
   onSelect: (type: CustomerType) => void
 }
 
 export function CustomerTypeStep({ onSelect }: CustomerTypeStepProps) {
+  const { t, tf } = useLanguage()
+
   return (
     <div className="space-y-6">
       <div className="space-y-4">
-        <span className="section-kicker">Step 1</span>
+        <span className="section-kicker">{tf(t.common.step, { n: 1 })}</span>
         <div className="max-w-3xl space-y-3">
-          <h2 className="text-3xl font-serif font-semibold leading-tight sm:text-4xl">
-            Welcome to the Claire Sailesh Car Rental Customer Portal
+          <h2 className="break-words text-2xl font-serif font-semibold leading-snug sm:text-3xl">
+            {t.customerType.title}
           </h2>
           <p className="max-w-2xl text-base leading-7 text-muted-foreground">
-            Create your rental contract request in a few simple steps. Start by
-            choosing whether you already have a customer profile with us.
+            {t.customerType.intro}
           </p>
         </div>
       </div>
 
       <div className="rounded-[1.75rem] border border-border/70 bg-secondary/25 p-4 sm:p-5">
-        <h3 className="text-base font-semibold text-foreground">Are you already a customer?</h3>
+        <h3 className="text-base font-semibold text-foreground">{t.customerType.question}</h3>
         <p className="mt-1 text-sm leading-6 text-muted-foreground">
-          Select your customer type to proceed with the appropriate form.
+          {t.customerType.questionHint}
         </p>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <SelectionCard
           icon={UserCheck}
-          title="Yes, I&apos;m already a customer"
-          description="I have an existing account and want to create a new contract request."
+          title={t.customerType.existingTitle}
+          description={t.customerType.existingDesc}
+          continueLabel={t.common.continue}
           onClick={() => onSelect("existing")}
         />
         <SelectionCard
           icon={UserPlus}
-          title="No, I&apos;m a new customer"
-          description="I&apos;m new here and would like to register and create my first contract."
+          title={t.customerType.newTitle}
+          description={t.customerType.newDesc}
+          continueLabel={t.common.continue}
           onClick={() => onSelect("new")}
         />
       </div>
@@ -54,11 +58,13 @@ function SelectionCard({
   icon: Icon,
   title,
   description,
+  continueLabel,
   onClick,
 }: {
   icon: typeof UserCheck
   title: string
   description: string
+  continueLabel: string
   onClick: () => void
 }) {
   return (
@@ -83,7 +89,7 @@ function SelectionCard({
               {description}
             </p>
             <div className="mt-5 flex items-center gap-2 text-sm font-semibold text-primary">
-              <span>Continue</span>
+              <span>{continueLabel}</span>
               <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
             </div>
           </div>
