@@ -66,7 +66,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Missing rental dates or times" }, { status: 400 })
   }
   if (!(deliveryPlace || "").trim() || !(recoveryPlace || "").trim()) {
-    return NextResponse.json({ error: "Delivery and recovery locations are required" }, { status: 400 })
+    return NextResponse.json({ error: "Pick up and return locations are required" }, { status: 400 })
   }
   if (!paymentMode || !isPaymentOption(paymentMode)) {
     return NextResponse.json({ error: "A valid payment option is required" }, { status: 400 })
